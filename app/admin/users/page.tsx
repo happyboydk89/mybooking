@@ -1,9 +1,16 @@
-import { getAllUsers } from '@/lib/actions'
+// import { getAllUsers } from '@/lib/actions'
 import UserManager from '@/components/UserManager'
+// import { getUserFromRequest } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 
 export default async function UsersPage() {
-  const result = await getAllUsers()
-  const users = result.success ? result.users : []
+  // const user = await getUserFromRequest()
+  // if (!user) {
+  //   redirect('/auth/login')
+  // }
+  // const result = await getAllUsers()
+  // const users = result.success ? result.users : []
+  const users = [] // temporary
 
   return (
     <div className="container mx-auto p-4">

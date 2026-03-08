@@ -2,36 +2,26 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { createUserInDB } from '@/lib/actions'
 
 export default function Signup() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
-        },
-      },
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     })
-    if (error) {
-      alert(error.message)
+    const data = await res.json()
+    if (!data.success) {
+      alert(data.error || 'Failed to register')
     } else {
-      // Create user in database
-      await createUserInDB(email, name)
-      alert('Check your email for confirmation')
-      router.push('/auth/login')
+      router.push('/dashboard')
     }
     setLoading(false)
   }
@@ -42,19 +32,6 @@ export default function Signup() {
         <div className="card-body">
           <h2 className="card-title justify-center">Sign Up</h2>
           <form onSubmit={handleSignup}>
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Name</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Name"
-                className="input input-bordered"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
             <div className="form-control">
               <label className="label">
                 <span className="label-text">Email</span>

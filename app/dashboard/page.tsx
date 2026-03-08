@@ -1,11 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getUserFromRequest } from '@/lib/auth'
 
 export default async function Dashboard() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getUserFromRequest()
+  console.log('[Dashboard] Current user:', user)
   if (!user) {
+    console.log('[Dashboard] No user found, redirecting to login')
     redirect('/auth/login')
   }
 
@@ -17,13 +17,18 @@ export default async function Dashboard() {
           <button className="btn btn-outline" type="submit">Logout</button>
         </form>
       </div>
-      <div className="card bg-base-100 shadow-xl">
+
+      <div className="card bg-base-100 shadow-xl mb-8">
         <div className="card-body">
-          <h2 className="card-title">Welcome, {user.email}</h2>
+          <h2 className="card-title">Welcome, {(user as any).email || user.id}</h2>
           <p>User ID: {user.id}</p>
-          <p>Email verified: {user.email_confirmed_at ? 'Yes' : 'No'}</p>
         </div>
+      </div>
+
+      <div className="alert alert-success">
+        <p>✅ You are successfully logged in!</p>
       </div>
     </div>
   )
+}
 }

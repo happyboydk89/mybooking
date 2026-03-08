@@ -1,9 +1,17 @@
+export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '../../../lib/generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
+import bcrypt from 'bcryptjs'
 
-function getPrismaClient() {
+// defer heavy/Node‑only imports until we actually need the database client
+async function getPrismaClient() {
+  const { PrismaClient } = await import('../../../lib/generated/prisma/client')
+  const { PrismaPg } = await import('@prisma/adapter-pg')
+  const { Pool } = await import('pg')
+
   const connectionString = process.env.DATABASE_URL
   const pool = new Pool({ connectionString })
   const adapter = new PrismaPg(pool)
@@ -21,28 +29,26 @@ const fakeUsers = [
   { email: 'user8@example.com', name: 'Hannah Lee' },
   { email: 'user9@example.com', name: 'Isaac Miller' },
   { email: 'user10@example.com', name: 'Julia Davis' },
-]
-
-const fakeBookings = [
-  { title: 'Team Meeting', description: 'Weekly sync for project updates' },
-  { title: 'Client Presentation', description: 'Q1 results presentation' },
-  { title: 'Training Session', description: 'New tool training for the team' },
-  { title: 'Conference Call', description: 'International team standup' },
-  { title: 'Project Review', description: 'Sprint retrospective' },
-  { title: 'Interview', description: 'Candidate interview round 1' },
-  { title: 'Workshop', description: 'Professional development workshop' },
-  { title: 'Networking Event', description: 'Industry networking meetup' },
-  { title: 'Product Demo', description: 'New feature demonstration' },
-  { title: 'Strategy Planning', description: 'Quarterly strategy planning session' },
+  { email: 'user11@example.com', name: 'Kevin Wilson' },
+  { email: 'user12@example.com', name: 'Laura Martinez' },
+  { email: 'user13@example.com', name: 'Michael Taylor' },
+  { email: 'user14@example.com', name: 'Nancy Anderson' },
+  { email: 'user15@example.com', name: 'Oliver Thomas' },
+  { email: 'user16@example.com', name: 'Paula Jackson' },
+  { email: 'user17@example.com', name: 'Quinn White' },
+  { email: 'user18@example.com', name: 'Rachel Harris' },
+  { email: 'user19@example.com', name: 'Steven Clark' },
+  { email: 'user20@example.com', name: 'Tina Rodriguez' },
 ]
 
 export async function POST(request: NextRequest) {
-  const prisma = getPrismaClient()
+  const prisma = await getPrismaClient()
   try {
-
+    console.log('Starting seed...')
     const createdUsers = []
 
-    // Create 10 users
+    // Create 20 users
+    console.log('Creating users...')
     for (const userData of fakeUsers) {
       const existingUser = await prisma.user.findUnique({
         where: { email: userData.email },
@@ -53,7 +59,8 @@ export async function POST(request: NextRequest) {
           data: {
             email: userData.email,
             name: userData.name,
-            role: 'user',
+            role: 'CUSTOMER',
+            password: 'password123', // simple password for all, no hash for now
           },
         })
         createdUsers.push(user)
@@ -61,39 +68,19 @@ export async function POST(request: NextRequest) {
         createdUsers.push(existingUser)
       }
     }
-
-    // Create 10 bookings for the users
-    const createdBookings = []
-    for (let i = 0; i < fakeBookings.length; i++) {
-      const user = createdUsers[i]
-      const bookingData = fakeBookings[i]
-      const futureDate = new Date()
-      futureDate.setDate(futureDate.getDate() + Math.floor(Math.random() * 30) + 1)
-
-      const booking = await prisma.booking.create({
-        data: {
-          userId: user.id,
-          title: bookingData.title,
-          description: bookingData.description,
-          date: futureDate,
-        },
-      })
-      createdBookings.push(booking)
-    }
-
+    console.log(`Created ${createdUsers.length} users`)
 
     return NextResponse.json({
       success: true,
-      message: `Created ${createdUsers.length} users and ${createdBookings.length} bookings`,
+      message: `Created ${createdUsers.length} users`,
       usersCreated: createdUsers.length,
-      bookingsCreated: createdBookings.length,
       users: createdUsers,
-      bookings: createdBookings,
     })
   } catch (error) {
     console.error('Seed error:', error)
+    console.error('Error stack:', (error as Error).stack)
     return NextResponse.json(
-      { success: false, error: (error as Error).message },
+      { success: false, error: (error as Error).message, stack: (error as Error).stack },
       { status: 500 }
     )
   }

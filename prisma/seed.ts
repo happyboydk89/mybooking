@@ -2,6 +2,7 @@ import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
+import bcrypt from 'bcryptjs'
 
 const connectionString = process.env.DATABASE_URL
 
@@ -40,6 +41,7 @@ async function main() {
           email: `provider${i}@example.com`,
           name: `Provider ${i}`,
           role: 'PROVIDER',
+          password: await bcrypt.hash('password', 10),
         },
       })
       providers.push(user)
@@ -53,6 +55,7 @@ async function main() {
           email: `customer${i}@example.com`,
           name: `Customer ${i}`,
           role: 'CUSTOMER',
+          password: await bcrypt.hash('password', 10),
         },
       })
       customers.push(user)
