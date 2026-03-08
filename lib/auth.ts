@@ -19,7 +19,6 @@ export async function setTokenCookie(token: string) {
   cookieStore.set({
     name: TOKEN_NAME,
     value: token,
-    httpOnly: true,
     path: '/',
     maxAge: 60 * 60 * 24 * 7, // 1 week
   })

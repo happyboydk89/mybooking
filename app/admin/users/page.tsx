@@ -10,7 +10,7 @@ export default async function UsersPage() {
   // }
   // const result = await getAllUsers()
   // const users = result.success ? result.users : []
-  const users = [] // temporary
+  const users: any[] = [] // temporary
 
   return (
     <div className="container mx-auto p-4">

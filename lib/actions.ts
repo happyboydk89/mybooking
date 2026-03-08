@@ -140,3 +140,126 @@ export async function getBusinessByProvider(providerId: string) {
     return { success: false, error: (error as Error).message }
   }
 }
+
+// update or create availability for a business on a specific day
+export async function updateAvailability(
+  businessId: string,
+  dayOfWeek: string,
+  startTime: string,
+  endTime: string,
+  isActive: boolean
+) {
+  try {
+    const availability = await prisma.availability.upsert({
+      where: {
+        businessId_dayOfWeek: {
+          businessId,
+          dayOfWeek: dayOfWeek as any,
+        },
+      },
+      update: {
+        startTime,
+        endTime,
+        isActive,
+      },
+      create: {
+        businessId,
+        dayOfWeek: dayOfWeek as any,
+        startTime,
+        endTime,
+        isActive,
+      },
+    })
+    return { success: true, availability }
+  } catch (error) {
+    console.error('Error updating availability:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Get all businesses owned by a user
+export async function getUserBusinesses(userId: string) {
+  try {
+    const businesses = await prisma.business.findMany({
+      where: { providerId: userId },
+      include: {
+        services: true,
+        availabilities: true,
+      },
+    })
+    return { success: true, businesses }
+  } catch (error) {
+    console.error('Error fetching user businesses:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Create a new business for a user
+export async function createBusiness(
+  userId: string,
+  name: string,
+  description: string,
+  address: string,
+  phone: string,
+  industryType: string
+) {
+  try {
+    const business = await prisma.business.create({
+      data: {
+        name,
+        description,
+        address,
+        phone,
+        industryType: industryType as any,
+        providerId: userId,
+      },
+    })
+    return { success: true, business }
+  } catch (error) {
+    console.error('Error creating business:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Get business details by ID for customer view
+export async function getBusinessDetails(businessId: string) {
+  try {
+    const business = await prisma.business.findUnique({
+      where: { id: businessId },
+      include: {
+        services: true,
+        availabilities: true,
+      },
+    })
+    return { success: true, business }
+  } catch (error) {
+    console.error('Error fetching business details:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Create a booking
+export async function createBooking(
+  userId: string,
+  businessId: string,
+  serviceId: string,
+  date: Date,
+  timeSlot: string
+) {
+  try {
+    const booking = await prisma.booking.create({
+      data: {
+        userId,
+        businessId,
+        serviceId,
+        date,
+        timeSlot,
+        status: 'PENDING',
+      },
+    })
+    return { success: true, booking }
+  } catch (error) {
+    console.error('Error creating booking:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}

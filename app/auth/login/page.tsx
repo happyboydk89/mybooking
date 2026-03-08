@@ -16,12 +16,16 @@ export default function Login() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
+      credentials: 'include', // Include cookies in request
     })
     const data = await res.json()
     if (!data.success) {
       alert(data.error || 'Login failed')
     } else {
-      router.push('/dashboard')
+      // Give browser time to receive and set cookie before navigating
+      setTimeout(() => {
+        window.location.href = '/dashboard'
+      }, 100)
     }
     setLoading(false)
   }
