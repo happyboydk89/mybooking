@@ -9,8 +9,8 @@ import Image from 'next/image'
 
 interface DashboardHeaderProps {
   onMenuClick: () => void
-  userName?: string
-  userEmail?: string
+  userName?: string | null
+  userEmail?: string | null
 }
 
 interface Notification {
@@ -182,9 +182,17 @@ function NotificationDropdown() {
   )
 }
 
-function UserDropdown({ userName = 'Nguyễn Văn A', userEmail = 'user@example.com' }) {
+function UserDropdown({
+  userName = 'Nguyễn Văn A',
+  userEmail = 'user@example.com',
+}: {
+  userName?: string | null
+  userEmail?: string | null
+}) {
   const [open, setOpen] = useState(false)
-  const userInitials = userName.substring(0, 2).toUpperCase()
+  const safeUserEmail = userEmail || 'user@example.com'
+  const safeUserName = userName?.trim() || safeUserEmail
+  const userInitials = safeUserName.substring(0, 2).toUpperCase()
   const avatarBgColors = [
     'from-indigo-500 to-indigo-600',
     'from-purple-500 to-purple-600',
@@ -192,7 +200,7 @@ function UserDropdown({ userName = 'Nguyễn Văn A', userEmail = 'user@example.
     'from-emerald-500 to-emerald-600',
     'from-amber-500 to-amber-600',
   ]
-  const avatarColor = avatarBgColors[userEmail?.length % 5 || 0]
+  const avatarColor = avatarBgColors[safeUserEmail.length % 5 || 0]
 
   return (
     <div className="relative">
@@ -206,8 +214,8 @@ function UserDropdown({ userName = 'Nguyễn Văn A', userEmail = 'user@example.
           <span>{userInitials}</span>
         </div>
         <div className="hidden md:block text-left">
-          <p className="text-sm font-medium text-slate-900 truncate">{userName}</p>
-          <p className="text-xs text-slate-500">{userEmail}</p>
+          <p className="text-sm font-medium text-slate-900 truncate">{safeUserName}</p>
+          <p className="text-xs text-slate-500">{safeUserEmail}</p>
         </div>
         <ChevronDown
           className={`w-4 h-4 text-slate-600 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -234,8 +242,8 @@ function UserDropdown({ userName = 'Nguyễn Văn A', userEmail = 'user@example.
                     {userInitials}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-900 truncate">{userName}</p>
-                    <p className="text-xs text-slate-500 truncate">{userEmail}</p>
+                    <p className="font-medium text-slate-900 truncate">{safeUserName}</p>
+                    <p className="text-xs text-slate-500 truncate">{safeUserEmail}</p>
                   </div>
                 </div>
               </div>

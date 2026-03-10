@@ -18,7 +18,7 @@ export default async function DashboardSettingsPage() {
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Tùy chọn hiển thị</h2>
         <p className="mt-2 text-sm text-slate-600">
-          Khu vực này sẵn sàng để tích hợp các thiết lập nâng cao cho Provider.
+          Khu vực này sẵn sàng để tích hợp các thiết lập nâng cao cho người dùng.
         </p>
       </div>
     </div>

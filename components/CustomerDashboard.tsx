@@ -57,9 +57,6 @@ export default function CustomerDashboard({ user }: CustomerDashboardProps) {
                 <strong>Name:</strong> {user.name || 'Not set'}
               </p>
               <p>
-                <strong>Role:</strong> {user.role}
-              </p>
-              <p>
                 <strong>Member Since:</strong>{' '}
                 {new Date(user.createdAt).toLocaleDateString()}
               </p>

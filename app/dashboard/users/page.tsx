@@ -14,15 +14,15 @@ export default async function UsersPage() {
   return (
     <div className="container mx-auto p-4">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Khach Hang Da Dat Lich</h1>
+        <h1 className="text-4xl font-bold mb-2">Người Dùng Đã Đặt Lịch</h1>
         <p className="text-gray-600">
-          Danh sach user duy nhat da tung dat lich tai cac business cua ban.
+          Danh sách người dùng duy nhất đã từng đặt lịch tại các business của bạn.
         </p>
       </div>
 
       <div className="card bg-base-100 shadow-xl">
         <div className="card-body">
-          <h2 className="card-title">Danh sach user khong trung nhau ({customers.length})</h2>
+          <h2 className="card-title">Danh sách người dùng không trùng ({customers.length})</h2>
 
           <div className="overflow-x-auto">
             <table className="table table-zebra w-full">
@@ -40,7 +40,7 @@ export default async function UsersPage() {
                 {customers.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center">
-                      Chua co user nao dat lich cho business cua ban.
+                      Chưa có người dùng nào đặt lịch cho business của bạn.
                     </td>
                   </tr>
                 ) : (

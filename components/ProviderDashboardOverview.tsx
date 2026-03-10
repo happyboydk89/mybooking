@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -42,7 +43,7 @@ interface RecentBooking {
 }
 
 interface ProviderDashboardOverviewProps {
-  providerName: string
+  userName: string
   stats: StatCard[]
   revenueData: RevenuePoint[]
   recentBookings: RecentBooking[]
@@ -103,16 +104,22 @@ function formatCurrencyVnd(value: number) {
 }
 
 export function ProviderDashboardOverview({
-  providerName,
+  userName,
   stats,
   revenueData,
   recentBookings,
 }: ProviderDashboardOverviewProps) {
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   return (
     <div className="space-y-8">
       <section className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-6 text-white shadow-2xl md:p-8">
-        <p className="text-sm uppercase tracking-[0.22em] text-slate-300">Provider Console</p>
-        <h1 className="mt-2 text-2xl font-semibold md:text-3xl">Xin chào, {providerName || 'Bạn'}</h1>
+        <p className="text-sm uppercase tracking-[0.22em] text-slate-300">Business Console</p>
+        <h1 className="mt-2 text-2xl font-semibold md:text-3xl">Xin chào, {userName || 'Bạn'}</h1>
         <p className="mt-2 text-sm text-slate-300 md:text-base">
           Tổng quan vận hành business trong tháng này, cập nhật theo thời gian thực.
         </p>
@@ -158,35 +165,39 @@ export function ProviderDashboardOverview({
           </div>
 
           <div className="h-[280px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0f766e" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#0f766e" stopOpacity={0.25} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="4 4" />
-                <XAxis dataKey="dateLabel" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tick={{ fill: '#64748b', fontSize: 12 }}
-                  tickFormatter={(value: number) => `${Math.round(value / 1000)}k`}
-                />
-                <Tooltip
-                  cursor={{ fill: 'rgba(15, 118, 110, 0.08)' }}
-                  formatter={(value) => formatCurrencyVnd(Number(value))}
-                  labelClassName="text-slate-700"
-                />
-                <Bar
-                  dataKey="revenue"
-                  radius={[8, 8, 0, 0]}
-                  fill="url(#revenueGradient)"
-                  maxBarSize={38}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {isMounted ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={revenueData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#0f766e" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#0f766e" stopOpacity={0.25} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} stroke="#e2e8f0" strokeDasharray="4 4" />
+                  <XAxis dataKey="dateLabel" tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: '#64748b', fontSize: 12 }}
+                    tickFormatter={(value: number) => `${Math.round(value / 1000)}k`}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(15, 118, 110, 0.08)' }}
+                    formatter={(value) => formatCurrencyVnd(Number(value))}
+                    labelClassName="text-slate-700"
+                  />
+                  <Bar
+                    dataKey="revenue"
+                    radius={[8, 8, 0, 0]}
+                    fill="url(#revenueGradient)"
+                    maxBarSize={38}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full animate-pulse rounded-xl bg-slate-100" />
+            )}
           </div>
         </article>
 

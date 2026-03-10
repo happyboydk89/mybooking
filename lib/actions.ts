@@ -23,7 +23,6 @@ export async function createUserInDB(email: string, name?: string, password?: st
         email,
         password: hashed,
         name: name || null,
-        role: 'CUSTOMER',
       },
     })
 
@@ -48,11 +47,11 @@ export async function getAllUsers() {
   }
 }
 
-export async function updateUser(id: string, email: string, name: string, role: string) {
+export async function updateUser(id: string, email: string, name: string) {
   try {
     const user = await prisma.user.update({
       where: { id },
-      data: { email, name, role },
+      data: { email, name },
       include: { bookings: true },
     })
 
@@ -333,7 +332,7 @@ export async function createBooking(
   timeSlot: string
 ) {
   try {
-    // Check if service exists and get provider info
+    // Check if service exists and get owner info
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
       include: {
@@ -349,9 +348,9 @@ export async function createBooking(
       return { success: false, error: 'Service not found' }
     }
 
-    // Prevent provider from booking their own service
+    // Prevent users from booking their own services
     if (service.business.providerId === userId) {
-      return { success: false, error: 'Providers cannot book their own services' }
+      return { success: false, error: 'You cannot book your own service' }
     }
 
     const booking = await prisma.booking.create({
@@ -481,7 +480,7 @@ export async function createBookingWithPayment(
   paymentProvider: 'ZALOPAY' | 'VNPAY' | 'MOMO' = 'ZALOPAY'
 ) {
   try {
-    // Check if service exists and get provider info
+    // Check if service exists and get owner info
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
       include: {
@@ -497,9 +496,9 @@ export async function createBookingWithPayment(
       return { success: false, error: 'Service not found' }
     }
 
-    // Prevent provider from booking their own service
+    // Prevent users from booking their own services
     if (service.business.providerId === userId) {
-      return { success: false, error: 'Providers cannot book their own services' }
+      return { success: false, error: 'You cannot book your own service' }
     }
 
     // Get user info for payment

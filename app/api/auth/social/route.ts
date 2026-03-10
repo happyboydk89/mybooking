@@ -71,7 +71,6 @@ export async function POST(request: Request) {
           name: normalizedName,
           avatarUrl: normalizedAvatarUrl,
           password: hashed,
-          role: 'CUSTOMER',
         },
       })
     } else if ((normalizedName && !user.name) || (normalizedAvatarUrl && !user.avatarUrl)) {

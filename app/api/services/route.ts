@@ -3,6 +3,7 @@ export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { createService } from '@/lib/actions'
 import { getUserFromRequest } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
@@ -23,6 +24,25 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: 'Missing or invalid required fields' },
         { status: 400 }
+      )
+    }
+
+    const business = await prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, providerId: true },
+    })
+
+    if (!business) {
+      return NextResponse.json(
+        { success: false, error: 'Business not found' },
+        { status: 404 }
+      )
+    }
+
+    if (business.providerId !== user.id) {
+      return NextResponse.json(
+        { success: false, error: 'You do not have permission to add services to this business' },
+        { status: 403 }
       )
     }
 

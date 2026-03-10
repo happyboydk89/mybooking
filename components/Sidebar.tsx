@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   BarChart3,
   Calendar,
+  History,
   Wrench,
   Clock,
+  Users,
   PanelRightClose,
   PanelRightOpen,
   Menu,
@@ -43,6 +45,11 @@ const menuItems: SidebarItem[] = [
     badge: 3,
   },
   {
+    label: 'Lịch sử đặt lịch',
+    href: '/dashboard/book-history',
+    icon: <History className="w-5 h-5" />,
+  },
+  {
     label: 'Dịch vụ',
     href: '/dashboard/services',
     icon: <Wrench className="w-5 h-5" />,
@@ -56,6 +63,11 @@ const menuItems: SidebarItem[] = [
     label: 'Cài đặt',
     href: '/dashboard/settings',
     icon: <Settings className="w-5 h-5" />,
+  },
+  {
+    label: 'Người dùng',
+    href: '/dashboard/users',
+    icon: <Users className="w-5 h-5" />,
   },
 ]
 

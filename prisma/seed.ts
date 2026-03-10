@@ -29,37 +29,35 @@ async function main() {
     await prisma.business.deleteMany()
     await prisma.user.deleteMany()
 
-    // Create 20 sample users (5 PROVIDER, 15 CUSTOMER)
+    // Create 20 sample users
     console.log('👥 Creating 20 sample users...')
     const providers = []
     const customers = []
 
-    // Create 5 PROVIDER users
+    // Create 5 business owners
     for (let i = 1; i <= 5; i++) {
       const user = await prisma.user.create({
         data: {
           email: `provider${i}@example.com`,
           name: `Provider ${i}`,
-          role: 'PROVIDER',
           password: await bcrypt.hash('password', 10),
         },
       })
       providers.push(user)
-      console.log(`✅ Created PROVIDER: ${user.email}`)
+      console.log(`✅ Created business owner: ${user.email}`)
     }
 
-    // Create 15 CUSTOMER users
+    // Create 15 booking users
     for (let i = 1; i <= 15; i++) {
       const user = await prisma.user.create({
         data: {
           email: `customer${i}@example.com`,
           name: `Customer ${i}`,
-          role: 'CUSTOMER',
           password: await bcrypt.hash('password', 10),
         },
       })
       customers.push(user)
-      console.log(`✅ Created CUSTOMER: ${user.email}`)
+      console.log(`✅ Created booking user: ${user.email}`)
     }
 
     // Create businesses for each provider
@@ -190,7 +188,7 @@ async function main() {
     const bookingCount = await prisma.booking.count()
 
     console.log(`📊 Database summary:`)
-    console.log(`   - Users: ${userCount} (5 PROVIDER, 15 CUSTOMER)`)
+    console.log(`   - Users: ${userCount} (5 business owners, 15 booking users)`)
     console.log(`   - Businesses: ${businessCount}`)
     console.log(`   - Services: ${serviceCount}`)
     console.log(`   - Availabilities: ${availabilityCount}`)

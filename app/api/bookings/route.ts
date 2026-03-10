@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if user is the provider of this service
+    // Check if user is the owner of this service
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
       include: {
@@ -39,10 +39,10 @@ export async function POST(request: Request) {
       )
     }
 
-    // Prevent provider from booking their own service
+    // Prevent users from booking their own services
     if (service.business.providerId === user.id) {
       return NextResponse.json(
-        { success: false, error: 'Providers cannot book their own services' },
+        { success: false, error: 'You cannot book your own service' },
         { status: 403 }
       )
     }

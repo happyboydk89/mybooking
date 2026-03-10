@@ -58,31 +58,31 @@ export default async function Dashboard() {
   if (businessIds.length === 0) {
     return (
       <ProviderDashboardOverview
-        providerName={user.name || user.email}
+        userName={user.name || user.email}
         stats={[
           {
-            title: 'Tong doanh thu (VND)',
+            title: 'Tổng doanh thu (VND)',
             value: formatVnd(0),
             growth: 0,
             icon: 'revenue',
             tone: 'emerald',
           },
           {
-            title: 'Tong lich hen',
+            title: 'Tổng lịch hẹn',
             value: '0',
             growth: 0,
             icon: 'appointments',
             tone: 'blue',
           },
           {
-            title: 'Khach hang moi',
+            title: 'Người dùng mới',
             value: '0',
             growth: 0,
             icon: 'customers',
             tone: 'amber',
           },
           {
-            title: 'Ty le hoan thanh',
+            title: 'Tỷ lệ hoàn thành',
             value: '0%',
             growth: 0,
             icon: 'completion',
@@ -212,31 +212,31 @@ export default async function Dashboard() {
 
   return (
     <ProviderDashboardOverview
-      providerName={user.name || user.email}
+      userName={user.name || user.email}
       stats={[
         {
-          title: 'Tong doanh thu (VND)',
+          title: 'Tổng doanh thu (VND)',
           value: formatVnd(totalRevenue),
           growth: toPercentGrowth(currentMonthRevenue, previousMonthRevenue),
           icon: 'revenue',
           tone: 'emerald',
         },
         {
-          title: 'Tong lich hen',
+          title: 'Tổng lịch hẹn',
           value: totalAppointments.toLocaleString('vi-VN'),
           growth: toPercentGrowth(currentAppointments, previousAppointments),
           icon: 'appointments',
           tone: 'blue',
         },
         {
-          title: 'Khach hang moi',
+          title: 'Người dùng mới',
           value: currentNewCustomers.toLocaleString('vi-VN'),
           growth: toPercentGrowth(currentNewCustomers, previousNewCustomers),
           icon: 'customers',
           tone: 'amber',
         },
         {
-          title: 'Ty le hoan thanh',
+          title: 'Tỷ lệ hoàn thành',
           value: `${totalCompletionRate.toFixed(1)}%`,
           growth: toPercentGrowth(currentCompletionRate, previousCompletionRate),
           icon: 'completion',

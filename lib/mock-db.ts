@@ -4,7 +4,6 @@ export interface MockUser {
   email: string
   password: string
   name?: string | null
-  role: 'CUSTOMER' | 'PROVIDER'
   createdAt: Date
   updatedAt: Date
 }
@@ -29,7 +28,6 @@ class MockDatabase {
       email: data.email || '',
       password: data.password || '',
       name: data.name || null,
-      role: data.role || 'CUSTOMER',
       createdAt: new Date(),
       updatedAt: new Date(),
     }
@@ -78,7 +76,7 @@ class MockDatabase {
   getStats() {
     return {
       totalUsers: this.users.size,
-      users: Array.from(this.users.values()).map(u => ({ id: u.id, email: u.email, role: u.role }))
+      users: Array.from(this.users.values()).map((u) => ({ id: u.id, email: u.email }))
     }
   }
 }

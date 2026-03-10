@@ -151,7 +151,7 @@ export default function BookingWidget({
           showToast.bookingSuccess(businessName, selectedService.name)
           setBookingSuccess(true)
           setTimeout(() => {
-            window.location.href = '/dashboard/customer/bookings'
+            window.location.href = '/dashboard/book-history'
           }, 2000)
         } else {
           showToast.bookingError(result.error)

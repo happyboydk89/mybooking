@@ -9,11 +9,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  CUSTOMER
-  PROVIDER
-}
-
 enum IndustryType {
   HAIR_SALON
   CLINIC
@@ -56,13 +51,12 @@ model User {
   name      String?
   phone     String?
   avatarUrl String?
-  role      Role       @default(CUSTOMER)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
   // Relations
-  businesses Business[] // If role is PROVIDER
-  bookings   Booking[]  // If role is CUSTOMER
+  businesses Business[]
+  bookings   Booking[]
 
   @@map("users")
 }

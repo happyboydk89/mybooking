@@ -59,7 +59,6 @@ export async function POST(request: NextRequest) {
           data: {
             email: userData.email,
             name: userData.name,
-            role: 'CUSTOMER',
             password: 'password123', // simple password for all, no hash for now
           },
         })

@@ -22,6 +22,8 @@ interface Business {
   services: Service[]
 }
 
+type IndustryType = 'HAIR_SALON' | 'CLINIC' | 'SPA_MASSAGE'
+
 const serviceSchema = z.object({
   name: z.string().min(1, 'Vui lòng nhập tên dịch vụ'),
   description: z.string().optional(),
@@ -41,8 +43,17 @@ export default function ServicesPage() {
   const [selectedBusinessId, setSelectedBusinessId] = useState('')
   const [enabledMap, setEnabledMap] = useState<Record<string, boolean>>({})
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isBusinessDialogOpen, setIsBusinessDialogOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [creatingBusiness, setCreatingBusiness] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [businessForm, setBusinessForm] = useState({
+    name: '',
+    description: '',
+    address: '',
+    phone: '',
+    industryType: 'HAIR_SALON' as IndustryType,
+  })
 
   const {
     register,
@@ -81,11 +92,7 @@ export default function ServicesPage() {
           return
         }
 
-        const userData = await userRes.json()
-        if (userData.user?.role !== 'PROVIDER') {
-          window.location.href = '/dashboard'
-          return
-        }
+        await userRes.json()
 
         const businessRes = await fetch('/api/user/businesses')
         if (businessRes.ok) {
@@ -194,6 +201,63 @@ export default function ServicesPage() {
     }
   }
 
+  const onCreateBusiness = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+
+    if (!businessForm.name.trim()) {
+      toast.error('Vui lòng nhập tên doanh nghiệp')
+      return
+    }
+
+    setCreatingBusiness(true)
+    try {
+      const response = await fetch('/api/user/businesses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: businessForm.name,
+          description: businessForm.description,
+          address: businessForm.address,
+          phone: businessForm.phone,
+          industryType: businessForm.industryType,
+        }),
+      })
+
+      const result = await response.json()
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Không thể tạo doanh nghiệp')
+      }
+
+      const newBusiness = {
+        ...result.business,
+        services: [],
+      } as Business
+
+      setBusinesses((prev) => [newBusiness, ...prev])
+      setSelectedBusinessId(newBusiness.id)
+      setIsBusinessDialogOpen(false)
+      setBusinessForm({
+        name: '',
+        description: '',
+        address: '',
+        phone: '',
+        industryType: 'HAIR_SALON',
+      })
+
+      toast.success('Tạo doanh nghiệp thành công', {
+        description: 'Bạn có thể thêm dịch vụ ngay bây giờ.',
+      })
+    } catch (error) {
+      toast.error('Tạo doanh nghiệp thất bại', {
+        description: (error as Error).message,
+      })
+    } finally {
+      setCreatingBusiness(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-24">
@@ -207,16 +271,104 @@ export default function ServicesPage() {
 
   if (businesses.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-        <h1 className="text-3xl font-bold text-slate-900">Quản lý dịch vụ</h1>
-        <p className="mt-2 text-slate-600">Bạn cần tạo doanh nghiệp trước khi thêm dịch vụ.</p>
-        <a
-          href="/dashboard"
-          className="mt-6 inline-block rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-700"
-        >
-          Quay lại Dashboard
-        </a>
-      </div>
+      <>
+        <div className="rounded-xl border border-slate-200 bg-white p-10 text-center shadow-sm">
+          <h1 className="text-3xl font-bold text-slate-900">Quản lý dịch vụ</h1>
+          <p className="mt-2 text-slate-600">Bạn chưa có doanh nghiệp. Tạo mới để thêm dịch vụ của riêng bạn.</p>
+          <button
+            type="button"
+            onClick={() => setIsBusinessDialogOpen(true)}
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 font-semibold text-white hover:bg-indigo-700"
+          >
+            <Plus size={18} />
+            Tạo doanh nghiệp ngay
+          </button>
+        </div>
+
+        {isBusinessDialogOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+            <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-900">Tạo doanh nghiệp</h2>
+                <button
+                  type="button"
+                  onClick={() => setIsBusinessDialogOpen(false)}
+                  className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={onCreateBusiness} className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Tên doanh nghiệp</label>
+                  <input
+                    type="text"
+                    value={businessForm.name}
+                    onChange={(e) => setBusinessForm((prev) => ({ ...prev, name: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-200 transition focus:ring-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Ngành nghề</label>
+                  <select
+                    value={businessForm.industryType}
+                    onChange={(e) =>
+                      setBusinessForm((prev) => ({ ...prev, industryType: e.target.value as IndustryType }))
+                    }
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-indigo-200 transition focus:ring-2"
+                  >
+                    <option value="HAIR_SALON">Hair Salon</option>
+                    <option value="CLINIC">Clinic</option>
+                    <option value="SPA_MASSAGE">Spa Massage</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Mô tả</label>
+                  <textarea
+                    rows={3}
+                    value={businessForm.description}
+                    onChange={(e) => setBusinessForm((prev) => ({ ...prev, description: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-200 transition focus:ring-2"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Địa chỉ</label>
+                    <input
+                      type="text"
+                      value={businessForm.address}
+                      onChange={(e) => setBusinessForm((prev) => ({ ...prev, address: e.target.value }))}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-200 transition focus:ring-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-700">Số điện thoại</label>
+                    <input
+                      type="text"
+                      value={businessForm.phone}
+                      onChange={(e) => setBusinessForm((prev) => ({ ...prev, phone: e.target.value }))}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none ring-indigo-200 transition focus:ring-2"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={creatingBusiness}
+                  className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {creatingBusiness ? 'Đang tạo...' : 'Tạo doanh nghiệp'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </>
     )
   }
 

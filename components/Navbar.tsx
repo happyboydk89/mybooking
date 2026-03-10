@@ -7,7 +7,6 @@ interface User {
   id: string
   email: string
   name?: string
-  role?: string
   avatarUrl?: string
 }
 
@@ -130,20 +129,16 @@ export default function Navbar() {
                         <span>👤 Profile</span>
                       </Link>
                     </li>
-                    {user.role === 'PROVIDER' && (
-                      <li>
-                        <Link href="/dashboard/services" className="hover:bg-indigo-50 hover:text-indigo-600">
-                          <span>⚙️ My Services</span>
-                        </Link>
-                      </li>
-                    )}
-                    {user.role === 'CUSTOMER' && (
-                      <li>
-                        <Link href="/dashboard/bookings" className="hover:bg-indigo-50 hover:text-indigo-600">
-                          <span>📅 My Bookings</span>
-                        </Link>
-                      </li>
-                    )}
+                    <li>
+                      <Link href="/dashboard/services" className="hover:bg-indigo-50 hover:text-indigo-600">
+                        <span>⚙️ My Services</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link href="/dashboard/book-history" className="hover:bg-indigo-50 hover:text-indigo-600">
+                        <span>📅 Book History</span>
+                      </Link>
+                    </li>
                     <li className="border-t border-slate-100 mt-1 pt-1">
                       <form action="/auth/logout" method="post">
                         <button type="submit" className="hover:bg-red-50 hover:text-red-600 w-full text-left">

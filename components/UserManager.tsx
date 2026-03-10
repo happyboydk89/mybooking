@@ -5,13 +5,13 @@ import { createUserInDB, updateUser, deleteUser, getAllUsers } from '@/lib/actio
 
 export default function UserManager({ initialUsers }: { initialUsers: any[] }) {
   const [users, setUsers] = useState(initialUsers)
-  const [formData, setFormData] = useState({ id: '', email: '', name: '', role: 'user' })
+  const [formData, setFormData] = useState({ id: '', email: '', name: '' })
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
 
   const resetForm = () => {
-    setFormData({ id: '', email: '', name: '', role: 'user' })
+    setFormData({ id: '', email: '', name: '' })
     setIsEditing(false)
   }
 
@@ -45,7 +45,7 @@ export default function UserManager({ initialUsers }: { initialUsers: any[] }) {
     }
 
     setLoading(true)
-    const result = await updateUser(formData.id, formData.email, formData.name, formData.role)
+    const result = await updateUser(formData.id, formData.email, formData.name)
     setLoading(false)
 
     if (result.success) {
@@ -64,7 +64,6 @@ export default function UserManager({ initialUsers }: { initialUsers: any[] }) {
       id: user.id,
       email: user.email,
       name: user.name || '',
-      role: user.role || 'user',
     })
     setIsEditing(true)
   }
@@ -124,22 +123,6 @@ export default function UserManager({ initialUsers }: { initialUsers: any[] }) {
                 />
               </div>
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Role</span>
-                </label>
-                <select
-                  className="select select-bordered"
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                  disabled={loading}
-                >
-                  <option value="user">User</option>
-                  <option value="admin">Admin</option>
-                  <option value="moderator">Moderator</option>
-                </select>
-              </div>
-
               <div className="form-control mt-4 gap-2">
                 <button className="btn btn-primary" type="submit" disabled={loading}>
                   {loading ? 'Đang xử lý...' : isEditing ? 'Cập nhật' : 'Thêm'}
@@ -172,7 +155,6 @@ export default function UserManager({ initialUsers }: { initialUsers: any[] }) {
                   <tr>
                     <th>Email</th>
                     <th>Name</th>
-                    <th>Role</th>
                     <th>Bookings</th>
                     <th>Hành động</th>
                   </tr>
@@ -180,7 +162,7 @@ export default function UserManager({ initialUsers }: { initialUsers: any[] }) {
                 <tbody>
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="text-center">
+                      <td colSpan={4} className="text-center">
                         Không có users
                       </td>
                     </tr>
@@ -189,9 +171,6 @@ export default function UserManager({ initialUsers }: { initialUsers: any[] }) {
                       <tr key={user.id}>
                         <td>{user.email}</td>
                         <td>{user.name || '-'}</td>
-                        <td>
-                          <span className="badge badge-primary">{user.role}</span>
-                        </td>
                         <td>{user.bookings?.length || 0}</td>
                         <td className="flex gap-2">
                           <button
