@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { updateBookingStatus, getBookingsForBusiness, getBookingById } from '@/lib/actions'
 import { subscribeToBookings } from '@/lib/supabase-client'
-import { Calendar, Clock, User, DollarSign, Eye, X, CheckCircle, XCircle } from 'lucide-react'
+import { Calendar, Clock, User, DollarSign, Eye, X, CheckCircle, XCircle, Package } from 'lucide-react'
+import { EmptyState } from '@/components/EmptyState'
+import { BookingListSkeleton, DashboardCardSkeleton } from '@/components/Skeleton'
+import { showToast } from '@/lib/toast'
 
 interface Booking {
   id: string
@@ -86,6 +89,13 @@ export default function ProviderBookingManager({ businessId }: { businessId: str
           booking.id === bookingId ? { ...booking, status } : booking
         )
       )
+      if (status === 'CONFIRMED') {
+        showToast.success('Lịch hẹn đã xác nhận', 'Khách hàng sẽ nhận được thông báo')
+      } else if (status === 'CANCELLED') {
+        showToast.warning('Lịch hẹn đã hủy', 'Khách hàng sẽ được thông báo')
+      }
+    } else {
+      showToast.error('Cập nhật thất bại', 'Vui lòng thử lại')
     }
     setUpdating(null)
   }
@@ -289,23 +299,15 @@ export default function ProviderBookingManager({ businessId }: { businessId: str
 
       {/* Bookings List/Table */}
       {loading ? (
-        <div className="flex justify-center items-center py-20">
-          <span className="loading loading-spinner loading-lg"></span>
-        </div>
+        viewType === 'card' ? <BookingListSkeleton /> : <BookingListSkeleton />
       ) : bookings.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-white rounded-lg shadow-sm p-12 border border-slate-200 text-center"
-        >
-          <p className="text-lg text-slate-600 mb-2">📭 Không có lịch hẹn nào</p>
-          <p className="text-sm text-slate-500">
-            {filterType === 'day' && 'Không có lịch hẹn hôm nay'}
-            {filterType === 'week' && 'Không có lịch hẹn tuần này'}
-            {filterType === 'month' && 'Không có lịch hẹn tháng này'}
-            {filterType === 'all' && 'Chưa có lịch hẹn nào'}
-          </p>
-        </motion.div>
+        <EmptyState
+          icon={<Package className="w-10 h-10 text-slate-600" />}
+          title="Chưa có lịch hẹn"
+          description="Bạn chưa có lịch hẹn nào trong khoảng thời gian này. Hệ thống sẽ hiển thị lịch hẹn tại đây khi khách hàng đặt."
+          gradient="from-slate-600 to-slate-700"
+          bgGradient="from-slate-100 to-slate-100"
+        />
       ) : viewType === 'card' ? (
         <div className="space-y-6">
           <CardView

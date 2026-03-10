@@ -6,6 +6,7 @@ import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
 import { createBooking, createBookingWithPayment } from '@/lib/actions'
 import { MapPin } from 'lucide-react'
+import { showToast } from '@/lib/toast'
 
 interface Service {
   id: string
@@ -88,11 +89,13 @@ export default function BookingWidget({
 
   const handleConfirmBooking = async () => {
     if (!selectedService || !selectedDate || !selectedTime || !userId || !businessId) {
-      alert('Please select service, date, and time')
+      showToast.warning('Vui lòng chọn dịch vụ, ngày và giờ', 'Hoàn thành tất cả các bước để tiếp tục')
       return
     }
 
     setLoading(true)
+    const loadingToast = showToast.loading('Đang xử lý đặt lịch...')
+    
     try {
       if (selectedService.requiresPayment) {
         const result = await createBookingWithPayment(
@@ -115,16 +118,24 @@ export default function BookingWidget({
             }),
           })
 
-          if (!paymentResponse.ok) throw new Error('Payment initiation failed')
+          if (!paymentResponse.ok) {
+            showToast.paymentError('Không thể khởi tạo thanh toán')
+            throw new Error('Payment initiation failed')
+          }
 
           const paymentData = await paymentResponse.json()
           if (paymentData.success && paymentData.paymentUrl) {
-            window.location.href = paymentData.paymentUrl
+            showToast.dismiss(loadingToast)
+            showToast.info('Đang chuyển hướng đến trang thanh toán...', 'Vui lòng đợi')
+            setTimeout(() => {
+              window.location.href = paymentData.paymentUrl
+            }, 1000)
           } else {
+            showToast.paymentError(paymentData.error)
             throw new Error(paymentData.error || 'Failed to get payment URL')
           }
         } else {
-          alert('Failed to create booking: ' + result.error)
+          showToast.bookingError(result.error)
         }
       } else {
         const result = await createBooking(
@@ -136,18 +147,21 @@ export default function BookingWidget({
         )
 
         if (result.success) {
+          showToast.dismiss(loadingToast)
+          showToast.bookingSuccess(businessName, selectedService.name)
           setBookingSuccess(true)
           setTimeout(() => {
-            window.location.href = '/dashboard'
+            window.location.href = '/dashboard/customer/bookings'
           }, 2000)
         } else {
-          alert('Failed to create booking: ' + result.error)
+          showToast.bookingError(result.error)
         }
       }
     } catch (error) {
-      alert('Error: ' + (error as Error).message)
+      showToast.error('Lỗi', (error as Error).message)
     } finally {
       setLoading(false)
+      showToast.dismiss(loadingToast)
     }
   }
 

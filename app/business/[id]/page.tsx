@@ -2,7 +2,8 @@ import { getBusinessDetails } from '@/lib/actions'
 import { getUserFromRequest } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import BookingWidget from '@/components/BookingWidget'
-import { ServiceCard } from '@/components/ServiceCard'
+import { ServicesList } from '@/components/ServicesList'
+import { BusinessHeroImage } from '@/components/BusinessHeroImage'
 import { MapPin, Phone, Star } from 'lucide-react'
 
 export default async function BusinessDetailPage({
@@ -31,19 +32,23 @@ export default async function BusinessDetailPage({
 
   const business = result.business
 
+  // Dummy image URLs based on industry type
+  const industryImages: Record<string, string> = {
+    HAIR_SALON: 'https://picsum.photos/800/400?random=1',
+    CLINIC: 'https://picsum.photos/800/400?random=2',
+    SPA_MASSAGE: 'https://picsum.photos/800/400?random=3',
+  }
+
+  const businessImage = industryImages[business.industryType] || 'https://picsum.photos/800/400?random=4'
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Business Header / Hero Section */}
-      <div className="relative h-64 bg-gradient-to-br from-indigo-600 to-indigo-700 overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-pattern"></div>
-        </div>
-        <div className="relative container mx-auto px-4 h-full flex items-end pb-6">
-          <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-bold text-white">{business.name}</h1>
-          </div>
-        </div>
-      </div>
+      {/* Business Header / Hero Section with Image */}
+      <BusinessHeroImage
+        businessName={business.name}
+        industryType={business.industryType}
+        businessImage={businessImage}
+      />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
@@ -98,27 +103,7 @@ export default async function BusinessDetailPage({
             {/* Services Section */}
             <div className="space-y-4">
               <h2 className="text-2xl font-bold text-slate-900">Dịch vụ</h2>
-              
-              {business.services.length === 0 ? (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
-                  <p className="text-amber-800 font-medium">Không có dịch vụ nào được cung cấp</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {business.services.map((service: any) => (
-                    <ServiceCard
-                      key={service.id}
-                      name={service.name}
-                      description={service.description}
-                      price={service.price}
-                      duration={service.duration}
-                      onSelect={() => {
-                        // This will be handled by the widget
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
+              <ServicesList services={business.services} />
             </div>
           </div>
 

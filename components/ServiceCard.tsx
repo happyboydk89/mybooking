@@ -1,5 +1,8 @@
+'use client'
+
 import { motion } from 'framer-motion'
 import { Clock, DollarSign } from 'lucide-react'
+import { ServiceImage } from '@/components/ServiceImage'
 
 interface ServiceCardProps {
   name: string
@@ -8,6 +11,7 @@ interface ServiceCardProps {
   duration: number
   onSelect: () => void
   isSelected?: boolean
+  image?: string | null
 }
 
 export function ServiceCard({
@@ -17,19 +21,24 @@ export function ServiceCard({
   duration,
   onSelect,
   isSelected = false,
+  image,
 }: ServiceCardProps) {
   return (
     <motion.div
       onClick={onSelect}
       whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
-      className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
+      className={`rounded-xl border-2 transition-all cursor-pointer overflow-hidden ${
         isSelected
           ? 'border-indigo-600 bg-indigo-50 shadow-lg'
           : 'border-slate-200 bg-white hover:border-indigo-300 hover:shadow-md'
       }`}
     >
-      <div className="space-y-2">
+      {/* Image Section */}
+      <ServiceImage name={name} image={image} />
+
+      {/* Content Section */}
+      <div className="p-4 space-y-2">
         {/* Title */}
         <h3 className="font-bold text-lg text-slate-900">{name}</h3>
 

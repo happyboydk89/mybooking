@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase-client'
+import { EmptyBookings } from '@/components/EmptyBookings'
+import { BookingListSkeleton } from '@/components/Skeleton'
+import { useRouter } from 'next/navigation'
 
 interface Booking {
   id: string
@@ -25,6 +28,7 @@ export default function CustomerBookingsList({ userId }: { userId: string }) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming')
+  const router = useRouter()
 
   // Subscribe to realtime booking updates
   useEffect(() => {
@@ -112,21 +116,17 @@ export default function CustomerBookingsList({ userId }: { userId: string }) {
   }, [userId])
 
   if (loading) {
-    return (
-      <div className="text-center py-8">
-        <span className="loading loading-spinner loading-lg"></span>
-      </div>
-    )
+    return <BookingListSkeleton />
   }
 
   if (bookings.length === 0) {
     return (
-      <div className="card bg-base-100 shadow-lg">
-        <div className="card-body text-center py-8">
-          <p className="text-lg text-gray-600">Bạn chưa có lịch hẹn nào</p>
-          <p className="text-sm text-gray-500">Hãy đặt ngay một lịch hẹn từ trang home</p>
-        </div>
-      </div>
+      <EmptyBookings
+        title="Chưa có lịch hẹn"
+        description="Bạn chưa có lịch hẹn nào. Hãy bắt đầu bằng cách tìm và đặt lịch với các doanh nghiệp yêu thích."
+        onAction={() => router.push('/')}
+        actionLabel="Khám phá dịch vụ"
+      />
     )
   }
 
