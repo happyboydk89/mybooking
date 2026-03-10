@@ -3,6 +3,7 @@ import { getUserFromRequest } from '@/lib/auth'
 import { getUserBusinesses } from '@/lib/actions'
 import DashboardNav from '@/components/DashboardNav'
 import CreateBusinessForm from '@/components/CreateBusinessForm'
+import ProfileSettingsForm from '@/components/ProfileSettingsForm'
 
 export default async function Dashboard() {
   const user = await getUserFromRequest()
@@ -22,6 +23,14 @@ export default async function Dashboard() {
         <p className="text-lg text-gray-600">
           Xin chào, <span className="font-semibold">{user.name || user.email}</span>! 👋
         </p>
+      </div>
+
+      <div className="mb-8">
+        <ProfileSettingsForm
+          email={user.email}
+          initialName={user.name}
+          initialPhone={user.phone}
+        />
       </div>
 
       {/* If user has no business, show create form first */}

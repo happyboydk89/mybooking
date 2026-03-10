@@ -1,13 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | null>(null)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,6 +27,39 @@ export default function Login() {
       }, 100)
     }
     setLoading(false)
+  }
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    setSocialLoading(provider)
+    try {
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+      if (!supabaseUrl || !supabaseKey) {
+        alert('Missing Supabase configuration in environment variables')
+        return
+      }
+
+      const { createClient } = await import('@supabase/supabase-js')
+      const supabase = createClient(supabaseUrl, supabaseKey)
+      const redirectTo = `${window.location.origin}/auth/callback?next=/dashboard`
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo,
+        },
+      })
+
+      if (error) {
+        alert(error.message || 'Social login failed')
+      }
+    } catch (error) {
+      console.error('Social login error:', error)
+      alert('Social login failed')
+    } finally {
+      setSocialLoading(null)
+    }
   }
 
   return (
@@ -68,6 +100,25 @@ export default function Login() {
               </button>
             </div>
           </form>
+          <div className="divider">Hoac</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => handleSocialLogin('google')}
+              disabled={socialLoading !== null}
+            >
+              {socialLoading === 'google' ? 'Dang ket noi...' : 'Login with Gmail'}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => handleSocialLogin('facebook')}
+              disabled={socialLoading !== null}
+            >
+              {socialLoading === 'facebook' ? 'Dang ket noi...' : 'Login with Facebook'}
+            </button>
+          </div>
           <div className="text-center">
             <a href="/auth/signup" className="link link-primary">Don't have an account? Sign up</a>
           </div>
