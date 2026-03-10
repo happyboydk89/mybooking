@@ -1,10 +1,19 @@
 import Link from 'next/link'
-import { getAllUsers } from '@/lib/actions'
+import { getAllUsers, getAllBusinesses } from '@/lib/actions'
+import { getUserFromRequest } from '@/lib/auth'
+import BusinessCard from '@/components/BusinessCard'
 
 export default async function Home() {
   const result = await getAllUsers()
   const users = result.success ? result.users : []
   const totalBookings = users.reduce((sum: number, user: any) => sum + (user.bookings?.length || 0), 0)
+  
+  // Get current user if logged in
+  const user = await getUserFromRequest()
+  
+  // Get all businesses
+  const businessResult = await getAllBusinesses()
+  const businesses = businessResult.success ? businessResult.businesses : []
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -74,12 +83,46 @@ export default async function Home() {
             </div>
           </Link>
 
-          <Link href="/admin/users" className="card bg-base-100 shadow-lg hover:shadow-xl transition">
+          <Link href="/dashboard/users" className="card bg-base-100 shadow-lg hover:shadow-xl transition">
             <div className="card-body">
               <div className="card-title">⚙️ Quản Lý Users</div>
               <p>CRUD users, bookings</p>
             </div>
           </Link>
+        </div>
+
+        {/* Businesses Section */}
+        <div className="mb-12">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-3xl font-bold">🏢 Các Dịch Vụ Nổi Bật</h2>
+              <p className="text-gray-600">Khám phá và đặt lịch các dịch vụ của bạn</p>
+            </div>
+            {user ? (
+              <Link href="/dashboard" className="btn btn-primary">
+                Dashboard
+              </Link>
+            ) : (
+              <Link href="/auth/login" className="btn btn-primary">
+                Đăng Nhập Để Đặt Lịch
+              </Link>
+            )}
+          </div>
+
+          {businesses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {businesses.map((business: any) => (
+                <BusinessCard key={business.id} business={business} userLoggedIn={!!user} />
+              ))}
+            </div>
+          ) : (
+            <div className="card bg-base-100 shadow-lg">
+              <div className="card-body text-center py-12">
+                <p className="text-lg text-gray-600">Chưa có dịch vụ nào được đăng ký</p>
+                <p className="text-sm text-gray-500">Hãy quay lại sau để khám phá những dịch vụ mới!</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Users List */}

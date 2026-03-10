@@ -194,6 +194,64 @@ export async function getUserBusinesses(userId: string) {
   }
 }
 
+// Get unique customers who have booked any business owned by a provider
+export async function getCustomersForProvider(providerId: string) {
+  try {
+    const customers = await prisma.user.findMany({
+      where: {
+        bookings: {
+          some: {
+            business: {
+              providerId,
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+        bookings: {
+          where: {
+            business: {
+              providerId,
+            },
+          },
+          select: {
+            id: true,
+            date: true,
+            status: true,
+            business: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            service: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          orderBy: {
+            date: 'desc',
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+    })
+
+    return { success: true, customers }
+  } catch (error) {
+    console.error('Error fetching provider customers:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
 // Create a new business for a user
 export async function createBusiness(
   userId: string,
@@ -238,6 +296,29 @@ export async function getBusinessDetails(businessId: string) {
   }
 }
 
+// Get all businesses for the public homepage
+export async function getAllBusinesses() {
+  try {
+    const businesses = await prisma.business.findMany({
+      include: {
+        services: true,
+        provider: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    })
+    return { success: true, businesses }
+  } catch (error) {
+    console.error('Error fetching businesses:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
 // Create a booking
 export async function createBooking(
   userId: string,
@@ -256,10 +337,127 @@ export async function createBooking(
         timeSlot,
         status: 'PENDING',
       },
+      include: {
+        user: true,
+        service: true,
+      },
     })
     return { success: true, booking }
   } catch (error) {
     console.error('Error creating booking:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Update booking status (confirm or cancel)
+export async function updateBookingStatus(
+  bookingId: string,
+  status: 'CONFIRMED' | 'CANCELLED'
+) {
+  try {
+    const booking = await prisma.booking.update({
+      where: { id: bookingId },
+      data: { status },
+      include: {
+        user: true,
+        service: true,
+        business: true,
+      },
+    })
+    return { success: true, booking }
+  } catch (error) {
+    console.error('Error updating booking status:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Get bookings for a business with filters
+export async function getBookingsForBusiness(
+  businessId: string,
+  filterType: 'all' | 'day' | 'week' | 'month' = 'all',
+  startDate?: Date
+) {
+  try {
+    let dateFilter: any = {}
+
+    if (filterType === 'day' && startDate) {
+      const start = new Date(startDate)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(startDate)
+      end.setHours(23, 59, 59, 999)
+      dateFilter = {
+        gte: start,
+        lte: end,
+      }
+    } else if (filterType === 'week' && startDate) {
+      const start = new Date(startDate)
+      const dayOfWeek = start.getDay()
+      const diff = start.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1)
+      start.setDate(diff)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(start)
+      end.setDate(end.getDate() + 6)
+      end.setHours(23, 59, 59, 999)
+      dateFilter = {
+        gte: start,
+        lte: end,
+      }
+    } else if (filterType === 'month' && startDate) {
+      const start = new Date(startDate.getFullYear(), startDate.getMonth(), 1)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0)
+      end.setHours(23, 59, 59, 999)
+      dateFilter = {
+        gte: start,
+        lte: end,
+      }
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where: {
+        businessId,
+        ...(Object.keys(dateFilter).length > 0 && { date: dateFilter }),
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        service: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            duration: true,
+          },
+        },
+      },
+      orderBy: { date: 'asc' },
+    })
+    return { success: true, bookings }
+  } catch (error) {
+    console.error('Error fetching bookings:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Get single booking details
+export async function getBookingById(bookingId: string) {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        user: true,
+        service: true,
+        business: true,
+      },
+    })
+    return { success: true, booking }
+  } catch (error) {
+    console.error('Error fetching booking:', error)
     return { success: false, error: (error as Error).message }
   }
 }

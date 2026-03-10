@@ -9,10 +9,15 @@ export default async function Header() {
         <Link href="/" className="text-xl font-bold">
           BookingApp
         </Link>
-        <nav className="space-x-4">
+        <nav className="space-x-4 flex items-center">
           {user ? (
             <>
-              {/* you could show avatar if you store one; use initials fallback */}
+              <Link href="/dashboard" className="btn btn-sm btn-outline">
+                Dashboard
+              </Link>
+              <Link href="/dashboard/bookings" className="btn btn-sm btn-outline">
+                📅 Lịch Hẹn
+              </Link>
               <span className="font-medium">{user.name ?? user.email}</span>
               <form action="/auth/logout" method="post" className="inline">
                 <button type="submit" className="btn btn-sm btn-outline">
