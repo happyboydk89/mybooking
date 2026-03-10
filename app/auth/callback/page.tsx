@@ -57,10 +57,15 @@ export default function AuthCallbackPage() {
           user.user_metadata?.preferred_username ||
           ''
 
+        const avatarUrl =
+          user.user_metadata?.avatar_url ||
+          user.user_metadata?.picture ||
+          ''
+
         const bridgeRes = await fetch('/api/auth/social', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ accessToken: session.access_token, name }),
+          body: JSON.stringify({ accessToken: session.access_token, name, avatarUrl }),
           credentials: 'include',
         })
 

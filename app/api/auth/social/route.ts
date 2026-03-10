@@ -8,7 +8,7 @@ import { createToken } from '@/lib/token'
 
 export async function POST(request: Request) {
   try {
-    const { accessToken, name } = await request.json()
+    const { accessToken, name, avatarUrl } = await request.json()
 
     if (!accessToken || typeof accessToken !== 'string') {
       return NextResponse.json(
@@ -54,6 +54,8 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.trim().toLowerCase()
     const normalizedName = typeof name === 'string' && name.trim() ? name.trim() : null
+    const normalizedAvatarUrl =
+      typeof avatarUrl === 'string' && avatarUrl.trim() ? avatarUrl.trim() : null
 
     let user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -67,8 +69,17 @@ export async function POST(request: Request) {
         data: {
           email: normalizedEmail,
           name: normalizedName,
+          avatarUrl: normalizedAvatarUrl,
           password: hashed,
           role: 'CUSTOMER',
+        },
+      })
+    } else if ((normalizedName && !user.name) || (normalizedAvatarUrl && !user.avatarUrl)) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          name: user.name || normalizedName,
+          avatarUrl: user.avatarUrl || normalizedAvatarUrl,
         },
       })
     }
