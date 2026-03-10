@@ -85,7 +85,9 @@ export async function createService(
   businessId: string,
   name: string,
   price: number,
-  duration: number
+  duration: number,
+  description?: string,
+  requiresPayment: boolean = false
 ) {
   try {
     const service = await prisma.service.create({
@@ -94,6 +96,8 @@ export async function createService(
         name,
         price,
         duration,
+        description: description || null,
+        requiresPayment,
       },
     })
     return { success: true, service }
@@ -328,6 +332,27 @@ export async function createBooking(
   timeSlot: string
 ) {
   try {
+    // Check if service exists and get provider info
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+      include: {
+        business: {
+          include: {
+            provider: true,
+          },
+        },
+      },
+    })
+
+    if (!service) {
+      return { success: false, error: 'Service not found' }
+    }
+
+    // Prevent provider from booking their own service
+    if (service.business.providerId === userId) {
+      return { success: false, error: 'Providers cannot book their own services' }
+    }
+
     const booking = await prisma.booking.create({
       data: {
         userId,
@@ -367,6 +392,132 @@ export async function updateBookingStatus(
     return { success: true, booking }
   } catch (error) {
     console.error('Error updating booking status:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Create a booking with payment (if service requires payment)
+export async function createBookingWithPayment(
+  userId: string,
+  businessId: string,
+  serviceId: string,
+  date: Date,
+  timeSlot: string,
+  paymentProvider: 'ZALOPAY' | 'VNPAY' | 'MOMO' = 'ZALOPAY'
+) {
+  try {
+    // Check if service exists and get provider info
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+      include: {
+        business: {
+          include: {
+            provider: true,
+          },
+        },
+      },
+    })
+
+    if (!service) {
+      return { success: false, error: 'Service not found' }
+    }
+
+    // Prevent provider from booking their own service
+    if (service.business.providerId === userId) {
+      return { success: false, error: 'Providers cannot book their own services' }
+    }
+
+    // Get user info for payment
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    })
+
+    if (!user) {
+      return { success: false, error: 'User not found' }
+    }
+
+    // Create booking within transaction
+    const result = await prisma.$transaction(async (tx: any) => {
+      // Create booking
+      const booking = await tx.booking.create({
+        data: {
+          userId,
+          businessId,
+          serviceId,
+          date,
+          timeSlot,
+          status: 'PENDING',
+          paymentStatus: 'PENDING',
+        },
+        include: {
+          user: true,
+          service: true,
+        },
+      })
+
+      // If service requires payment, create payment record
+      if (service.requiresPayment) {
+        // Generate unique transaction ID
+        const timestamp = Date.now()
+        const randomSuffix = Math.random().toString().substring(2, 8)
+        const transactionId = `${booking.id}${timestamp}${randomSuffix}`
+
+        // Create payment record
+        const payment = await tx.payment.create({
+          data: {
+            bookingId: booking.id,
+            provider: paymentProvider,
+            transactionId,
+            amount: service.price,
+            status: 'PENDING',
+          },
+        })
+
+        return {
+          booking,
+          payment,
+          requiresPayment: true,
+          transactionId,
+        }
+      }
+
+      return {
+        booking,
+        payment: null,
+        requiresPayment: false,
+        transactionId: null,
+      }
+    })
+
+    return {
+      success: true,
+      booking: result.booking,
+      payment: result.payment,
+      requiresPayment: result.requiresPayment,
+      transactionId: result.transactionId,
+    }
+  } catch (error) {
+    console.error('Error creating booking with payment:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Get booking details
+export async function getBookingDetails(bookingId: string) {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        user: true,
+        service: true,
+        business: true,
+        payment: true,
+      },
+    })
+
+    return { success: true, booking }
+  } catch (error) {
+    console.error('Error getting booking details:', error)
     return { success: false, error: (error as Error).message }
   }
 }
@@ -458,6 +609,56 @@ export async function getBookingById(bookingId: string) {
     return { success: true, booking }
   } catch (error) {
     console.error('Error fetching booking:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Get all availabilities for a business
+export async function getBusinessAvailabilities(businessId: string) {
+  try {
+    const availabilities = await prisma.availability.findMany({
+      where: { businessId },
+      orderBy: {
+        dayOfWeek: 'asc',
+      },
+    })
+    return { success: true, availabilities }
+  } catch (error) {
+    console.error('Error fetching availabilities:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+// Update all availabilities for a business at once
+export async function updateBusinessAvailabilities(
+  businessId: string,
+  availabilities: Array<{
+    dayOfWeek: string
+    startTime: string
+    endTime: string
+    isActive: boolean
+  }>
+) {
+  try {
+    // Delete existing availabilities for this business
+    await prisma.availability.deleteMany({
+      where: { businessId },
+    })
+
+    // Create new availabilites
+    const created = await prisma.availability.createMany({
+      data: availabilities.map((a) => ({
+        businessId,
+        dayOfWeek: a.dayOfWeek as any,
+        startTime: a.startTime,
+        endTime: a.endTime,
+        isActive: a.isActive,
+      })),
+    })
+
+    return { success: true, count: created.count }
+  } catch (error) {
+    console.error('Error updating availabilities:', error)
     return { success: false, error: (error as Error).message }
   }
 }

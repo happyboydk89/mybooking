@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     const description = formData.get('description') as string
     const price = parseFloat(formData.get('price') as string)
     const duration = parseInt(formData.get('duration') as string, 10)
+    const requiresPayment = formData.get('requiresPayment') === 'true'
 
     if (!businessId || !name || isNaN(price) || isNaN(duration)) {
       return NextResponse.json(
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const result = await createService(businessId, name, price, duration)
+    const result = await createService(businessId, name, price, duration, description, requiresPayment)
 
     if (result.success) {
       return NextResponse.json({ success: true, service: result.service })

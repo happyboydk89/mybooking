@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Calendar from 'react-calendar'
 import 'react-calendar/dist/Calendar.css'
-import { createBooking } from '@/lib/actions'
+import { createBooking, createBookingWithPayment } from '@/lib/actions'
 
 interface Service {
   id: string
@@ -12,6 +12,7 @@ interface Service {
   description?: string | null
   price: number
   duration: number
+  requiresPayment?: boolean
 }
 
 interface Availability {
@@ -39,6 +40,8 @@ export default function BookingClient({
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'processing' | 'success' | 'failed' | null>(null)
+  const [bookingId, setBookingId] = useState<string | null>(null)
 
   // Get day of week from date
   const getDayOfWeek = (date: Date): string => {
@@ -101,26 +104,84 @@ export default function BookingClient({
 
     setLoading(true)
     try {
-      const result = await createBooking(
-        userId,
-        businessId,
-        selectedService.id,
-        new Date(selectedDate),
-        selectedTime
-      )
+      // If service requires payment, create booking with payment
+      if (selectedService.requiresPayment) {
+        const result = await createBookingWithPayment(
+          userId,
+          businessId,
+          selectedService.id,
+          new Date(selectedDate),
+          selectedTime,
+          'ZALOPAY'
+        )
 
-      if (result.success) {
-        setBookingSuccess(true)
-        setTimeout(() => {
-          window.location.href = '/dashboard'
-        }, 2000)
+        if (result.success && result.booking) {
+          setBookingId(result.booking.id)
+          setPaymentStatus('pending')
+          // Proceed to payment creation
+          await handleInitiatePayment(result.booking.id)
+        } else {
+          alert('Failed to create booking: ' + result.error)
+          setPaymentStatus('failed')
+        }
       } else {
-        alert('Failed to create booking: ' + result.error)
+        // No payment required, create booking directly
+        const result = await createBooking(
+          userId,
+          businessId,
+          selectedService.id,
+          new Date(selectedDate),
+          selectedTime
+        )
+
+        if (result.success) {
+          setBookingSuccess(true)
+          setTimeout(() => {
+            window.location.href = '/dashboard'
+          }, 2000)
+        } else {
+          alert('Failed to create booking: ' + result.error)
+        }
       }
     } catch (error) {
       alert('Error creating booking: ' + (error as Error).message)
+      setPaymentStatus('failed')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleInitiatePayment = async (bookingIdParam: string) => {
+    try {
+      setPaymentStatus('processing')
+      const response = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bookingId: bookingIdParam,
+          paymentProvider: 'ZALOPAY',
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create payment')
+      }
+
+      const data = await response.json()
+
+      if (data.success && data.paymentUrl) {
+        // Redirect to payment gateway
+        window.location.href = data.paymentUrl
+      } else {
+        setPaymentStatus('failed')
+        alert('Failed to get payment URL: ' + (data.error || 'Unknown error'))
+      }
+    } catch (error) {
+      setPaymentStatus('failed')
+      alert('Payment error: ' + (error as Error).message)
     }
   }
 
@@ -268,26 +329,115 @@ export default function BookingClient({
                   <p>
                     <strong>Price:</strong> ${selectedService?.price}
                   </p>
+                  {selectedService?.requiresPayment && (
+                    <p className="text-sm text-blue-600 font-semibold mt-2">
+                      🔒 This service requires online payment
+                    </p>
+                  )}
                 </div>
 
+                {/* Success Status */}
                 {bookingSuccess && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="alert alert-success mt-4"
                   >
-                    <span>Booking created successfully! Redirecting...</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="stroke-current shrink-0 h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span>✅ Booking confirmed successfully! Redirecting...</span>
                   </motion.div>
                 )}
 
-                <div className="card-actions justify-end mt-4">
-                  <button
-                    onClick={handleConfirmBooking}
-                    disabled={loading || bookingSuccess}
-                    className="btn btn-primary"
+                {/* Payment Processing Status */}
+                {paymentStatus === 'processing' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="alert alert-info mt-4"
                   >
-                    {loading ? 'Creating Booking...' : 'Confirm Booking'}
-                  </button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="stroke-current shrink-0 h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z"
+                      />
+                    </svg>
+                    <span>⏳ Processing payment... Redirecting to payment gateway...</span>
+                  </motion.div>
+                )}
+
+                {/* Payment Failed Status */}
+                {paymentStatus === 'failed' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="alert alert-error mt-4"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="stroke-current shrink-0 h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M10 14l-2-2m0 0l-2-2m2 2l2-2m-2 2l-2 2m9-11a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    <span>❌ Payment failed. Please try again.</span>
+                  </motion.div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="card-actions justify-end mt-4">
+                  {selectedService?.requiresPayment ? (
+                    <motion.button
+                      onClick={handleConfirmBooking}
+                      disabled={loading || bookingSuccess || paymentStatus === 'processing' || paymentStatus === 'failed'}
+                      className="btn btn-primary gap-2"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {paymentStatus === 'processing' && (
+                        <span className="loading loading-spinner loading-sm"></span>
+                      )}
+                      {loading
+                        ? 'Creating Booking...'
+                        : paymentStatus === 'failed'
+                          ? 'Try Payment Again'
+                          : '💳 Pay Now'}
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      onClick={handleConfirmBooking}
+                      disabled={loading || bookingSuccess}
+                      className="btn btn-primary"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {loading ? 'Creating Booking...' : 'Confirm Booking'}
+                    </motion.button>
+                  )}
                 </div>
               </div>
             </div>

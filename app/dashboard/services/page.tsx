@@ -1,64 +1,98 @@
+'use client'
+
+import { useState, useCallback } from 'react'
 import { getUserFromRequest } from '@/lib/auth'
 import { getUserBusinesses } from '@/lib/actions'
-import { redirect } from 'next/navigation'
-import CreateServiceForm from '@/components/CreateServiceForm'
+import ServiceManager from '@/components/ServiceManager'
+import { useEffect } from 'react'
 
-export default async function ServicesPage() {
-  const user = await getUserFromRequest()
-  if (!user) {
-    redirect('/auth/login')
+export default function ServicesPage() {
+  const [businesses, setBusinesses] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Get user info from API
+        const userRes = await fetch('/api/auth/me')
+        if (!userRes.ok) {
+          window.location.href = '/auth/login'
+          return
+        }
+        const userData = await userRes.json()
+        setUser(userData.user)
+
+        if (userData.user?.role !== 'PROVIDER') {
+          window.location.href = '/dashboard'
+          return
+        }
+
+        // Get businesses
+        const businessRes = await fetch('/api/user/businesses')
+        if (businessRes.ok) {
+          const businessData = await businessRes.json()
+          setBusinesses(businessData.businesses || [])
+        }
+      } catch (error) {
+        console.error('Error loading data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      const response = await fetch('/api/user/businesses')
+      if (response.ok) {
+        const data = await response.json()
+        setBusinesses(data.businesses || [])
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+    }
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="text-slate-600 mt-4">Đang tải...</p>
+        </div>
+      </div>
+    )
   }
-
-  const businessResult = await getUserBusinesses(user.id)
-  const businesses = businessResult.success ? businessResult.businesses : []
 
   if (businesses.length === 0) {
     return (
-      <div className="container mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-4">My Services</h1>
-        <p className="text-gray-600">You need to create a business first to add services.</p>
-        <a href="/dashboard" className="btn btn-primary mt-4">
-          Go to Dashboard
-        </a>
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-slate-900 mb-2">Quản lý dịch vụ</h1>
+            <p className="text-slate-600 mb-8">
+              Bạn cần tạo doanh nghiệp trước khi thêm dịch vụ
+            </p>
+            <a
+              href="/dashboard"
+              className="inline-block px-6 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+            >
+              Quay lại Dashboard
+            </a>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-8">Manage Services</h1>
-
-      {businesses.map((business: any) => (
-        <div key={business.id} className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">{business.name}</h2>
-
-          {/* List existing services */}
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-4">Your Services</h3>
-            {business.services && business.services.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4">
-                {business.services.map((service: any) => (
-                  <div key={service.id} className="card bg-base-100 shadow-md">
-                    <div className="card-body">
-                      <h4 className="card-title">{service.name}</h4>
-                      <p className="text-sm text-gray-600">{service.description}</p>
-                      <div className="flex justify-between mt-2">
-                        <span className="font-semibold text-blue-600">${service.price}</span>
-                        <span className="text-sm text-gray-500">{service.duration} min</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600">No services yet</p>
-            )}
-          </div>
-
-          {/* Create new service form */}
-          <CreateServiceForm businessId={business.id} />
-        </div>
-      ))}
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      <div className="container mx-auto px-4 py-8">
+        <ServiceManager businesses={businesses} onRefresh={handleRefresh} />
+      </div>
     </div>
   )
 }

@@ -20,6 +20,33 @@ export async function POST(request: Request) {
       )
     }
 
+    // Check if user is the provider of this service
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+      include: {
+        business: {
+          include: {
+            provider: true,
+          },
+        },
+      },
+    })
+
+    if (!service) {
+      return NextResponse.json(
+        { success: false, error: 'Service not found' },
+        { status: 404 }
+      )
+    }
+
+    // Prevent provider from booking their own service
+    if (service.business.providerId === user.id) {
+      return NextResponse.json(
+        { success: false, error: 'Providers cannot book their own services' },
+        { status: 403 }
+      )
+    }
+
     // Create booking
     const booking = await prisma.booking.create({
       data: {

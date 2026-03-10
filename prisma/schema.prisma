@@ -36,6 +36,19 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum PaymentProvider {
+  ZALOPAY
+  VNPAY
+  MOMO
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
 model User {
   id        String     @id @default(cuid())
   email     String     @unique
@@ -75,15 +88,16 @@ model Business {
 }
 
 model Service {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  price       Float
-  duration    Int      // Duration in minutes
-  businessId  String
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  price           Float
+  duration        Int      // Duration in minutes
+  requiresPayment Boolean  @default(false) // Whether service requires online payment
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
   bookings Booking[]
@@ -102,23 +116,43 @@ model Availability {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
+  @@unique([businessId, dayOfWeek])
   @@map("availabilities")
 }
 
 model Booking {
-  id         String        @id @default(cuid())
-  userId     String
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessId String
-  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  serviceId  String
-  service    Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  date       DateTime
-  timeSlot   String?       // Format: HH:MM (e.g., "14:00")
-  status     BookingStatus @default(PENDING)
-  notes      String?
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId    String
+  business      Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  date          DateTime
+  timeSlot      String?       // Format: HH:MM (e.g., "14:00")
+  status        BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  payment Payment?
 
   @@map("bookings")
+}
+
+model Payment {
+  id            String          @id @default(cuid())
+  bookingId     String          @unique
+  booking       Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  provider      PaymentProvider
+  transactionId String          @unique
+  amount        Float
+  status        PaymentStatus   @default(PENDING)
+  rawResponse   Json?           // Store raw response from payment gateway
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@map("payments")
 }

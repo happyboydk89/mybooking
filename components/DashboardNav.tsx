@@ -11,7 +11,7 @@ export default function DashboardNav({ businessCount }: { businessCount: number 
       transition={{ duration: 0.4 }}
       className="mb-8"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Business Management Button */}
         <Link href="/dashboard">
           <motion.div
@@ -40,6 +40,22 @@ export default function DashboardNav({ businessCount }: { businessCount: number 
               <h2 className="card-title text-2xl mb-2">Quản Lý Bookings</h2>
               <p className="text-purple-100 mb-4">Xem, xác nhận hoặc hủy các lịch hẹn của khách hàng</p>
               <div className="badge badge-lg badge-ghost">Realtime Updates</div>
+            </div>
+          </motion.div>
+        </Link>
+
+        {/* Business Hours Configuration Button */}
+        <Link href="/dashboard/business-hours">
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="card bg-gradient-to-br from-green-500 to-green-600 shadow-lg cursor-pointer text-white hover:shadow-xl transition-shadow"
+          >
+            <div className="card-body items-center text-center py-8">
+              <div className="text-5xl mb-4">⏰</div>
+              <h2 className="card-title text-2xl mb-2">Thời Gian Làm Việc</h2>
+              <p className="text-green-100 mb-4">Cấu hình giờ mở cửa và đóng cửa hàng tuần</p>
+              <div className="badge badge-lg badge-ghost">Quản Lý Giờ</div>
             </div>
           </motion.div>
         </Link>
