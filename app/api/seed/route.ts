@@ -1,22 +1,8 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '../../../lib/generated/prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
-import { Pool } from 'pg'
+import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
-
-// defer heavy/Node‑only imports until we actually need the database client
-async function getPrismaClient() {
-  const { PrismaClient } = await import('../../../lib/generated/prisma/client')
-  const { PrismaPg } = await import('@prisma/adapter-pg')
-  const { Pool } = await import('pg')
-
-  const connectionString = process.env.DATABASE_URL
-  const pool = new Pool({ connectionString })
-  const adapter = new PrismaPg(pool)
-  return new (PrismaClient as any)({ adapter })
-}
 
 const fakeUsers = [
   { email: 'user1@example.com', name: 'Alice Johnson' },
@@ -42,7 +28,6 @@ const fakeUsers = [
 ]
 
 export async function POST(request: NextRequest) {
-  const prisma = await getPrismaClient()
   try {
     console.log('Starting seed...')
     const createdUsers = []
