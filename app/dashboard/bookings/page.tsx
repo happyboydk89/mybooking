@@ -1,9 +1,9 @@
 import { getUserFromRequest } from '@/lib/auth'
 import { getUserBusinesses } from '@/lib/actions'
 import { redirect } from 'next/navigation'
-import ProviderBookingManager from '@/components/ProviderBookingManager'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { prisma } from '@/lib/prisma'
+import BookingDataTable, { type BookingRow } from '@/components/BookingDataTable'
 
 export default async function BookingsPage({
   searchParams,
@@ -28,84 +28,102 @@ export default async function BookingsPage({
     selectedBusiness = businesses[0]
   }
 
+  const bookings = selectedBusiness
+    ? await prisma.booking.findMany({
+        where: {
+          businessId: selectedBusiness.id,
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          service: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      })
+    : []
+
+  const bookingRows: BookingRow[] = bookings.map((booking: any) => ({
+    id: booking.id,
+    customerName: booking.user.name || '',
+    customerEmail: booking.user.email,
+    serviceName: booking.service.name,
+    dateTimeLabel: `${booking.date.toLocaleDateString('vi-VN')} • ${
+      booking.timeSlot ||
+      booking.date.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    }`,
+    status: booking.status,
+    payment: booking.paymentStatus === 'SUCCESS' ? 'PAID' : 'UNPAID',
+  }))
+
   if (businesses.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
-            <h1 className="text-3xl font-bold mb-4">📅 Quản Lý Lịch Hẹn</h1>
-            <p className="text-slate-600 mb-6">Bạn cần tạo một doanh nghiệp trước khi có thể quản lý lịch hẹn.</p>
-            <a href="/dashboard" className="btn btn-primary">
-              Quay Lại Dashboard
-            </a>
-          </div>
-        </div>
+      <div className="bg-white rounded-lg shadow-sm p-8 border border-slate-200">
+        <h1 className="text-3xl font-bold mb-4">📅 Quản Lý Lịch Hẹn</h1>
+        <p className="text-slate-600 mb-6">Bạn cần tạo một doanh nghiệp trước khi có thể quản lý lịch hẹn.</p>
+        <Link href="/dashboard" className="btn btn-primary">
+          Quay Lại Dashboard
+        </Link>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
-        >
-          <div>
-            <h1 className="text-4xl font-bold mb-2 text-slate-900">📅 Quản Lý Lịch Hẹn</h1>
-            {selectedBusiness && (
-              <p className="text-slate-600">{selectedBusiness.name}</p>
-            )}
-          </div>
-          <Link href="/dashboard" className="btn btn-outline gap-2">
-            ← Quay Lại
-          </Link>
-        </motion.div>
-
-        {/* Business Selector Tabs */}
-        {businesses.length > 1 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mb-6 flex gap-2 flex-wrap"
-          >
-            {businesses.map((b: any) => (
-              <a
-                key={b.id}
-                href={`/dashboard/bookings?business=${b.id}`}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  b.id === selectedBusiness?.id
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                {b.name}
-              </a>
-            ))}
-          </motion.div>
-        )}
-
-        {/* Content */}
-        {selectedBusiness ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
-          >
-            <ProviderBookingManager businessId={selectedBusiness.id} />
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center"
-          >
-            <p className="text-lg text-slate-600">📭 Vui lòng chọn một doanh nghiệp</p>
-          </motion.div>
-        )}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900">📅 Quản Lý Lịch Hẹn</h1>
+          {selectedBusiness && (
+            <p className="text-slate-600 mt-2">{selectedBusiness.name}</p>
+          )}
+        </div>
+        <Link href="/dashboard" className="btn btn-outline gap-2">
+          ← Quay Lại
+        </Link>
       </div>
+
+      {/* Business Selector Tabs */}
+      {businesses.length > 1 && (
+        <div className="flex gap-2 flex-wrap">
+          {businesses.map((b: any) => (
+            <a
+              key={b.id}
+              href={`/dashboard/bookings?business=${b.id}`}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                b.id === selectedBusiness?.id
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              {b.name}
+            </a>
+          ))}
+        </div>
+      )}
+
+      {/* Content */}
+      {selectedBusiness ? (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <BookingDataTable initialRows={bookingRows} />
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+          <p className="text-lg text-slate-600">📭 Vui lòng chọn một doanh nghiệp</p>
+        </div>
+      )}
     </div>
   )
 }

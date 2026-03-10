@@ -2,6 +2,7 @@
 
 import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
+import { sendBatchEmails } from './email'
 
 export async function createUserInDB(email: string, name?: string, password?: string) {
   try {
@@ -392,6 +393,80 @@ export async function updateBookingStatus(
     return { success: true, booking }
   } catch (error) {
     console.error('Error updating booking status:', error)
+    return { success: false, error: (error as Error).message }
+  }
+}
+
+export async function sendBookingReminder(bookingId: string) {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+        service: {
+          select: {
+            name: true,
+          },
+        },
+        business: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    })
+
+    if (!booking) {
+      return { success: false, error: 'Booking not found' }
+    }
+
+    const bookingDate = booking.date.toLocaleDateString('vi-VN')
+    const bookingTime = booking.timeSlot || booking.date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+    const customerName = booking.user.name || booking.user.email
+
+    const html = `
+      <html>
+        <body style="font-family: Arial, sans-serif; background: #f8fafc; padding: 16px;">
+          <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px;">
+            <h2 style="margin: 0 0 12px 0; color: #0f172a;">Nhắc lịch hẹn</h2>
+            <p style="margin: 0 0 8px 0; color: #334155;">Xin chào ${customerName},</p>
+            <p style="margin: 0 0 16px 0; color: #334155;">
+              Bạn có lịch hẹn sắp tới tại <strong>${booking.business.name}</strong>.
+            </p>
+            <ul style="padding-left: 18px; color: #334155; margin: 0 0 16px 0;">
+              <li>Dịch vụ: ${booking.service.name}</li>
+              <li>Ngày: ${bookingDate}</li>
+              <li>Giờ: ${bookingTime}</li>
+              <li>Mã lịch hẹn: ${booking.id}</li>
+            </ul>
+            <p style="margin: 0; color: #64748b; font-size: 13px;">Vui lòng đến sớm 5-10 phút để được phục vụ tốt nhất.</p>
+          </div>
+        </body>
+      </html>
+    `
+
+    const result = await sendBatchEmails({
+      emails: [
+        {
+          to: booking.user.email,
+          subject: `Nhắc lịch hẹn - ${booking.service.name}`,
+          html,
+        },
+      ],
+    })
+
+    if (!result.success) {
+      return { success: false, error: 'Failed to send reminder email' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('Error sending booking reminder:', error)
     return { success: false, error: (error as Error).message }
   }
 }
