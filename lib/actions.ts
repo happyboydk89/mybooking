@@ -870,3 +870,139 @@ export async function updateBusinessAvailabilities(
     return { success: false, error: (error as Error).message }
   }
 }
+
+// Get count of pending bookings for all user's businesses
+export async function getPendingBookingsCountForUser(userId: string) {
+  try {
+    const user = await getUserFromRequest()
+    if (!user || user.id !== userId) {
+      return { success: false, error: 'Unauthorized', count: 0 }
+    }
+
+    // Get all businesses for this user
+    const businesses = await prisma.business.findMany({
+      where: { ownerId: userId },
+      select: { id: true },
+    })
+
+    if (businesses.length === 0) {
+      return { success: true, count: 0 }
+    }
+
+    const businessIds = businesses.map((b) => b.id)
+
+    // Count pending bookings across all businesses
+    const pendingCount = await prisma.booking.count({
+      where: {
+        businessId: { in: businessIds },
+        status: 'PENDING',
+      },
+    })
+
+    return { success: true, count: pendingCount }
+  } catch (error) {
+    console.error('Error fetching pending bookings count:', error)
+    return { success: false, error: (error as Error).message, count: 0 }
+  }
+}
+
+// Get notifications for user based on recent bookings
+export async function getNotificationsForUser(userId: string) {
+  try {
+    const user = await getUserFromRequest()
+    if (!user || user.id !== userId) {
+      return { success: false, error: 'Unauthorized', notifications: [] }
+    }
+
+    // Get all businesses for this user
+    const businesses = await prisma.business.findMany({
+      where: { ownerId: userId },
+      select: { id: true },
+    })
+
+    if (businesses.length === 0) {
+      return { success: true, notifications: [] }
+    }
+
+    const businessIds = businesses.map((b) => b.id)
+
+    // Get recent bookings (last 24 hours for pending, or recent confirmed)
+    const now = new Date()
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+
+    const recentBookings = await prisma.booking.findMany({
+      where: {
+        businessId: { in: businessIds },
+        OR: [
+          { status: 'PENDING' },
+          {
+            status: 'CONFIRMED',
+            updatedAt: { gte: twentyFourHoursAgo },
+          },
+        ],
+      },
+      include: {
+        user: {
+          select: { name: true, email: true },
+        },
+        services: {
+          include: {
+            service: {
+              select: { name: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    })
+
+    interface Notification {
+      id: string
+      title: string
+      description: string
+      timestamp: string
+      read: boolean
+    }
+
+    const notifications: Notification[] = recentBookings.map((booking) => {
+      const serviceNames = booking.services.map((s) => s.service.name).join(', ')
+      const customerName = booking.user.name || booking.user.email
+
+      if (booking.status === 'PENDING') {
+        return {
+          id: booking.id,
+          title: 'Lịch hẹn mới',
+          description: `${customerName} đã đặt lịch ${serviceNames}`,
+          timestamp: formatTimeAgo(booking.createdAt),
+          read: false,
+        }
+      } else {
+        return {
+          id: booking.id,
+          title: 'Lịch hẹn được xác nhận',
+          description: `${customerName} - ${serviceNames}`,
+          timestamp: formatTimeAgo(booking.updatedAt),
+          read: true,
+        }
+      }
+    })
+
+    return { success: true, notifications }
+  } catch (error) {
+    console.error('Error fetching notifications:', error)
+    return { success: false, error: (error as Error).message, notifications: [] }
+  }
+}
+
+// Helper function to format time ago
+function formatTimeAgo(date: Date): string {
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (diffInSeconds < 60) return 'Vừa xong'
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} ngày trước`
+  return date.toLocaleDateString('vi-VN')
+}

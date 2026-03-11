@@ -30,9 +30,10 @@ interface SidebarProps {
   onClose: () => void
   collapsed?: boolean
   onToggleCollapse?: () => void
+  pendingBookingsCount?: number
 }
 
-const menuItems: SidebarItem[] = [
+const baseMenuItems: Omit<SidebarItem, 'badge'>[] = [
 	{
 		label: 'Tổng quan',
 		href: '/dashboard',
@@ -52,7 +53,6 @@ const menuItems: SidebarItem[] = [
 		label: 'Lịch hẹn',
 		href: '/dashboard/bookings',
 		icon: <Calendar className="w-5 h-5" />,
-		badge: 3,
 	},
 	{
 		label: 'Quản lý người dùng',
@@ -76,8 +76,16 @@ export function Sidebar({
   onClose,
   collapsed = false,
   onToggleCollapse,
+  pendingBookingsCount = 0,
 }: SidebarProps) {
   const pathname = usePathname()
+
+  // Build menu items with dynamic badge
+  const menuItems: SidebarItem[] = baseMenuItems.map((item) =>
+    item.label === 'Lịch hẹn' && pendingBookingsCount > 0
+      ? { ...item, badge: pendingBookingsCount }
+      : item
+  )
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {

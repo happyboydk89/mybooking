@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-table'
 import { MoreHorizontal } from 'lucide-react'
 import { sendBookingReminder, updateBookingStatus } from '@/lib/actions'
+import { BookingConfirmationModal } from '@/components/BookingConfirmationModal'
 
 export interface BookingRow {
   id: string
@@ -32,68 +33,22 @@ const statusBadgeClasses: Record<BookingRow['status'], string> = {
 
 function RowActions({
   row,
-  onConfirm,
-  onCancel,
-  onSendReminder,
+  onOpen,
   pending,
 }: {
   row: BookingRow
-  onConfirm: (bookingId: string) => void
-  onCancel: (bookingId: string) => void
-  onSendReminder: (bookingId: string) => void
+  onOpen: (booking: BookingRow) => void
   pending: boolean
 }) {
-  const [open, setOpen] = useState(false)
-
   return (
-    <div className="relative inline-flex justify-end">
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => setOpen((prev) => !prev)}
-        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        <MoreHorizontal size={16} />
-      </button>
-
-      {open && (
-        <div className="absolute right-0 top-10 z-20 w-44 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
-          <button
-            type="button"
-            disabled={pending || row.status === 'CONFIRMED'}
-            onClick={() => {
-              setOpen(false)
-              onConfirm(row.id)
-            }}
-            className="w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Xác nhận lịch
-          </button>
-          <button
-            type="button"
-            disabled={pending || row.status === 'CANCELLED'}
-            onClick={() => {
-              setOpen(false)
-              onCancel(row.id)
-            }}
-            className="w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Hủy lịch
-          </button>
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => {
-              setOpen(false)
-              onSendReminder(row.id)
-            }}
-            className="w-full rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Gửi email nhắc lịch
-          </button>
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      disabled={pending}
+      onClick={() => onOpen(row)}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 transition-all"
+    >
+      <MoreHorizontal size={16} />
+    </button>
   )
 }
 
@@ -103,6 +58,8 @@ export default function BookingDataTable({ initialRows }: BookingDataTableProps)
   const [searchTerm, setSearchTerm] = useState('')
   const [feedback, setFeedback] = useState('')
   const [isPending, startTransition] = useTransition()
+  const [selectedBooking, setSelectedBooking] = useState<BookingRow | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -137,6 +94,8 @@ export default function BookingDataTable({ initialRows }: BookingDataTableProps)
       }
 
       setFeedback('Đã xác nhận lịch hẹn.')
+      setIsModalOpen(false)
+      setSelectedBooking(null)
     })
   }
 
@@ -157,6 +116,8 @@ export default function BookingDataTable({ initialRows }: BookingDataTableProps)
       }
 
       setFeedback('Đã hủy lịch hẹn.')
+      setIsModalOpen(false)
+      setSelectedBooking(null)
     })
   }
 
@@ -169,7 +130,14 @@ export default function BookingDataTable({ initialRows }: BookingDataTableProps)
       }
 
       setFeedback('Đã gửi email nhắc lịch thành công.')
+      setIsModalOpen(false)
+      setSelectedBooking(null)
     })
+  }
+
+  const handleOpenModal = (booking: BookingRow) => {
+    setSelectedBooking(booking)
+    setIsModalOpen(true)
   }
 
   const columns = useMemo<ColumnDef<BookingRow>[]>(
@@ -244,9 +212,7 @@ export default function BookingDataTable({ initialRows }: BookingDataTableProps)
           <RowActions
             row={row.original}
             pending={isPending}
-            onConfirm={handleConfirm}
-            onCancel={handleCancel}
-            onSendReminder={handleSendReminder}
+            onOpen={handleOpenModal}
           />
         ),
       },
@@ -262,6 +228,19 @@ export default function BookingDataTable({ initialRows }: BookingDataTableProps)
 
   return (
     <div className="space-y-4">
+      <BookingConfirmationModal
+        isOpen={isModalOpen}
+        booking={selectedBooking}
+        isPending={isPending}
+        onConfirm={() => selectedBooking && handleConfirm(selectedBooking.id)}
+        onCancel={() => selectedBooking && handleCancel(selectedBooking.id)}
+        onSendReminder={() => selectedBooking && handleSendReminder(selectedBooking.id)}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSelectedBooking(null)
+        }}
+      />
+
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <input

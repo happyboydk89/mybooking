@@ -11,6 +11,8 @@ interface DashboardHeaderProps {
   onMenuClick: () => void
   userName?: string | null
   userEmail?: string | null
+  pendingBookingsCount?: number
+  notifications?: Notification[]
 }
 
 interface Notification {
@@ -80,9 +82,11 @@ function Breadcrumbs() {
   )
 }
 
-function NotificationDropdown() {
+function NotificationDropdown({ notifications = [] }: { notifications?: Notification[] }) {
   const [open, setOpen] = useState(false)
-  const unreadCount = mockNotifications.filter((n) => !n.read).length
+  // Use passed notifications or fall back to empty array
+  const displayNotifications = notifications.length > 0 ? notifications : []
+  const unreadCount = displayNotifications.filter((n) => !n.read).length
 
   return (
     <div className="relative">
@@ -130,14 +134,14 @@ function NotificationDropdown() {
               </div>
 
               {/* Notifications */}
-              {mockNotifications.length === 0 ? (
+              {displayNotifications.length === 0 ? (
                 <div className="p-8 text-center text-slate-500">
                   <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">Không có thông báo nào</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-200">
-                  {mockNotifications.map((notification) => (
+                  {displayNotifications.map((notification) => (
                     <motion.div
                       key={notification.id}
                       whileHover={{ backgroundColor: '#f8fafc' }}
@@ -288,7 +292,13 @@ function UserDropdown({
   )
 }
 
-export function DashboardHeader({ onMenuClick, userName, userEmail }: DashboardHeaderProps) {
+export function DashboardHeader({ 
+  onMenuClick, 
+  userName, 
+  userEmail,
+  pendingBookingsCount = 0,
+  notifications = [],
+}: DashboardHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false)
 
   return (
@@ -346,7 +356,7 @@ export function DashboardHeader({ onMenuClick, userName, userEmail }: DashboardH
 
           {/* Right Section */}
           <div className="flex items-center gap-2">
-            <NotificationDropdown />
+            <NotificationDropdown notifications={notifications} />
             <div className="hidden sm:block w-px h-6 bg-slate-200" />
             <UserDropdown userName={userName} userEmail={userEmail} />
           </div>

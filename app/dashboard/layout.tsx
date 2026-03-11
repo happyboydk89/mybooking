@@ -23,7 +23,11 @@ export default async function DashboardRootLayout({
   return (
     <>
       <ToastProvider />
-      <DashboardLayout userName={user.name} userEmail={user.email}>
+      <DashboardLayout 
+        userName={user.name} 
+        userEmail={user.email}
+        userId={user.id}
+      >
         {children}
       </DashboardLayout>
     </>
