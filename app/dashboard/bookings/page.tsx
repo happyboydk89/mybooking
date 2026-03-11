@@ -40,9 +40,13 @@ export default async function BookingsPage({
               email: true,
             },
           },
-          service: {
-            select: {
-              name: true,
+          services: {
+            include: {
+              service: {
+                select: {
+                  name: true,
+                },
+              },
             },
           },
         },
@@ -56,7 +60,7 @@ export default async function BookingsPage({
     id: booking.id,
     customerName: booking.user.name || '',
     customerEmail: booking.user.email,
-    serviceName: booking.service.name,
+    serviceName: booking.services.map((bs: any) => bs.service.name).join(' + '),
     dateTimeLabel: `${booking.date.toLocaleDateString('vi-VN')} • ${
       booking.timeSlot ||
       booking.date.toLocaleTimeString('vi-VN', {

@@ -30,11 +30,15 @@ export async function POST(request: Request) {
       )
     }
 
-    // Get booking with service and user info
+    // Get booking with services and user info
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        service: true,
+        services: {
+          include: {
+            service: true,
+          },
+        },
         user: true,
         business: true,
       },
@@ -55,13 +59,19 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if service requires payment
-    if (!booking.service.requiresPayment) {
+    // Check if any service requires payment
+    const servicesRequiringPayment = booking.services.filter(bs => bs.service.requiresPayment)
+    if (servicesRequiringPayment.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'This service does not require payment' },
+        { success: false, error: 'None of the selected services require payment' },
         { status: 400 }
       )
     }
+
+    // Calculate total amount
+    const totalAmount = booking.services.reduce((sum, bs) => sum + bs.service.price, 0)
+    const serviceNames = booking.services.map(bs => bs.service.name).join(' + ')
+    const maxDuration = Math.max(...booking.services.map(bs => bs.service.duration))
 
     // Create payment order based on provider
     let paymentResult: any = null
@@ -71,10 +81,11 @@ export async function POST(request: Request) {
         {
           id: booking.id,
           userId: booking.userId,
-          serviceId: booking.serviceId,
-          amount: booking.service.price,
+          serviceName: serviceNames,
+          amount: totalAmount,
           date: booking.date.toISOString().split('T')[0],
           timeSlot: booking.timeSlot || '',
+          duration: maxDuration,
         },
         {
           id: user.id,

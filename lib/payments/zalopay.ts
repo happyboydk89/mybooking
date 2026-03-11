@@ -16,10 +16,12 @@ interface ZaloPayConfig {
 interface BookingInfo {
   id: string
   userId: string
-  serviceId: string
+  serviceName?: string
+  serviceId?: string
   amount: number
   date: string
   timeSlot: string
+  duration?: number
 }
 
 /**

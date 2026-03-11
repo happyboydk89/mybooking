@@ -30,6 +30,7 @@ export default async function UsersPage() {
                 <tr>
                   <th>Email</th>
                   <th>Ten</th>
+                  <th>So Dien Thoai</th>
                   <th>So Lan Dat</th>
                   <th>Business Da Dat</th>
                   <th>Booking Gan Nhat</th>
@@ -39,7 +40,7 @@ export default async function UsersPage() {
               <tbody>
                 {customers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center">
+                    <td colSpan={7} className="text-center">
                       Chưa có người dùng nào đặt lịch cho business của bạn.
                     </td>
                   </tr>
@@ -54,6 +55,7 @@ export default async function UsersPage() {
                       <tr key={customer.id}>
                         <td>{customer.email}</td>
                         <td>{customer.name || '-'}</td>
+                        <td>{customer.phone || '-'}</td>
                         <td>{customer.bookings?.length || 0}</td>
                         <td>{businessNames.length > 0 ? businessNames.join(', ') : '-'}</td>
                         <td>

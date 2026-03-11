@@ -109,7 +109,7 @@ export default function BookingClient({
         const result = await createBookingWithPayment(
           userId,
           businessId,
-          selectedService.id,
+          [selectedService.id],
           new Date(selectedDate),
           selectedTime,
           'ZALOPAY'
@@ -129,7 +129,7 @@ export default function BookingClient({
         const result = await createBooking(
           userId,
           businessId,
-          selectedService.id,
+          [selectedService.id],
           new Date(selectedDate),
           selectedTime
         )

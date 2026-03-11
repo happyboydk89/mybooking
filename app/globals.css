@@ -194,3 +194,43 @@ body {
   grid-template-columns: repeat(7, 1fr);
 }
 
+/* Enhanced Calendar Styling for Booking Widget */
+.react-calendar {
+  border: none !important;
+  background: transparent !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  font-size: 14px !important;
+}
+
+.react-calendar__navigation {
+  margin-bottom: 1.5em !important;
+}
+
+.react-calendar__navigation button {
+  font-weight: 600 !important;
+  font-size: 14px !important;
+}
+
+.react-calendar__tile {
+  padding: 12px 4px !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-calendar__tile:hover:not(.react-calendar__tile--disabled) {
+  background-color: #e0e7ff !important;
+}
+
+.react-calendar__tile--active {
+  background-color: #4f46e5 !important;
+  color: white !important;
+  border-radius: 6px !important;
+}
+
+.react-calendar__tile--now {
+  background-color: #fef08a !important;
+  font-weight: 600 !important;
+}
+

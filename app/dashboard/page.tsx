@@ -106,10 +106,14 @@ export default async function Dashboard() {
       businessId: { in: businessIds },
     },
     include: {
-      service: {
-        select: {
-          name: true,
-          price: true,
+      services: {
+        include: {
+          service: {
+            select: {
+              name: true,
+              price: true,
+            },
+          },
         },
       },
       user: {
@@ -133,13 +137,13 @@ export default async function Dashboard() {
 
   const totalRevenue = allBookings
     .filter((booking: any) => booking.status === 'CONFIRMED')
-    .reduce((sum: number, booking: any) => sum + booking.service.price, 0)
+    .reduce((sum: number, booking: any) => sum + booking.services.reduce((serviceSum: number, bs: any) => serviceSum + bs.service.price, 0), 0)
   const currentMonthRevenue = currentMonthBookings
     .filter((booking: any) => booking.status === 'CONFIRMED')
-    .reduce((sum: number, booking: any) => sum + booking.service.price, 0)
+    .reduce((sum: number, booking: any) => sum + booking.services.reduce((serviceSum: number, bs: any) => serviceSum + bs.service.price, 0), 0)
   const previousMonthRevenue = previousMonthBookings
     .filter((booking: any) => booking.status === 'CONFIRMED')
-    .reduce((sum: number, booking: any) => sum + booking.service.price, 0)
+    .reduce((sum: number, booking: any) => sum + booking.services.reduce((serviceSum: number, bs: any) => serviceSum + bs.service.price, 0), 0)
 
   const totalAppointments = allBookings.length
   const currentAppointments = currentMonthBookings.length
@@ -187,7 +191,7 @@ export default async function Dashboard() {
       return
     }
 
-    dailyRevenueMap.set(key, (dailyRevenueMap.get(key) || 0) + booking.service.price)
+    dailyRevenueMap.set(key, (dailyRevenueMap.get(key) || 0) + booking.services.reduce((sum: number, bs: any) => sum + bs.service.price, 0))
   })
 
   const revenueData = Array.from(dailyRevenueMap.entries()).map(([dateLabel, revenue]) => ({
@@ -199,7 +203,7 @@ export default async function Dashboard() {
     id: booking.id,
     customerName: booking.user.name || '',
     customerEmail: booking.user.email,
-    serviceName: booking.service.name,
+    serviceName: booking.services.map((bs: any) => bs.service.name).join(' + '),
     timeLabel: booking.createdAt.toLocaleString('vi-VN', {
       day: '2-digit',
       month: '2-digit',

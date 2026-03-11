@@ -33,7 +33,11 @@ export async function GET(request: Request) {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        service: true,
+        services: {
+          include: {
+            service: true,
+          },
+        },
         payment: true,
         user: true,
       },
@@ -60,10 +64,11 @@ export async function GET(request: Request) {
         id: booking.id,
         status: booking.status,
         paymentStatus: booking.paymentStatus,
-        service: {
-          name: booking.service.name,
-          price: booking.service.price,
-        },
+        services: booking.services.map(bs => ({
+          name: bs.service.name,
+          price: bs.service.price,
+        })),
+        totalPrice: booking.services.reduce((sum, bs) => sum + bs.service.price, 0),
         date: booking.date,
         timeSlot: booking.timeSlot,
         payment: booking.payment

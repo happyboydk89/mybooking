@@ -21,12 +21,18 @@ interface Booking {
     email: string
     phone?: string
   }
-  service: {
+  services: Array<{
     id: string
-    name: string
-    price: number
-    duration: number
-  }
+    createdAt: Date
+    bookingId: string
+    serviceId: string
+    service: {
+      id: string
+      name: string
+      price: number
+      duration: number
+    }
+  }>
   notes?: string
 }
 
@@ -216,7 +222,7 @@ export default function ProviderBookingManager({ businessId }: { businessId: str
           label="Tổng Doanh Thu"
           value={`${bookings
             .filter((b) => b.status === 'CONFIRMED' && b.paymentStatus === 'SUCCESS')
-            .reduce((sum, b) => sum + b.service.price, 0)
+            .reduce((sum, b) => sum + b.services.reduce((serviceSum, bs) => serviceSum + bs.service.price, 0), 0)
             .toLocaleString('vi-VN')}₫`}
           color="bg-purple-50"
           isPrice
@@ -539,14 +545,14 @@ function BookingCardItem({
         {/* Header */}
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
-            <h3 className="font-bold text-lg text-slate-900">{booking.service.name}</h3>
+            <h3 className="font-bold text-lg text-slate-900">{booking.services.map((bs: any) => bs.service.name).join(' + ')}</h3>
             <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">
               <User size={14} /> {booking.user.name || booking.user.email}
             </p>
           </div>
           <div className="text-right">
-            <p className="font-bold text-lg text-indigo-600">{booking.service.price.toLocaleString('vi-VN')}₫</p>
-            <p className="text-xs text-slate-500">{booking.service.duration} phút</p>
+            <p className="font-bold text-lg text-indigo-600">{booking.services.reduce((sum: number, bs: any) => sum + bs.service.price, 0).toLocaleString('vi-VN')}₫</p>
+            <p className="text-xs text-slate-500">{Math.max(...booking.services.map((bs: any) => bs.service.duration))} phút</p>
           </div>
         </div>
 
@@ -658,13 +664,13 @@ function TableView({
                   <p className="text-xs text-slate-500">{booking.user.email}</p>
                 </div>
               </td>
-              <td className="px-4 py-3 text-sm text-slate-700">{booking.service.name}</td>
+              <td className="px-4 py-3 text-sm text-slate-700">{booking.services.map((bs: any) => bs.service.name).join(' + ')}</td>
               <td className="px-4 py-3 text-sm text-slate-700">
                 {formatDate(booking.date, false)} <br />
                 <span className="text-xs text-slate-500">{booking.timeSlot}</span>
               </td>
               <td className="px-4 py-3 text-sm font-medium text-indigo-600">
-                {booking.service.price.toLocaleString('vi-VN')}₫
+                {booking.services.reduce((sum: number, bs: any) => sum + bs.service.price, 0).toLocaleString('vi-VN')}₫
               </td>
               <td className="px-4 py-3 text-sm">
                 <span className={`badge ${getStatusBadgeColor(booking.status)}`}>
@@ -753,8 +759,8 @@ function BookingDetailsModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="text-sm font-semibold text-slate-600 mb-2">Dịch Vụ</h3>
-              <p className="text-lg font-bold text-slate-900">{booking.service.name}</p>
-              <p className="text-sm text-slate-600 mt-1">{booking.service.duration} phút</p>
+              <p className="text-lg font-bold text-slate-900">{booking.services.map((bs: any) => bs.service.name).join(' + ')}</p>
+              <p className="text-sm text-slate-600 mt-1">{Math.max(...booking.services.map((bs: any) => bs.service.duration))} phút</p>
             </div>
             <div>
               <h3 className="text-sm font-semibold text-slate-600 mb-2">Khách Hàng</h3>
@@ -800,7 +806,7 @@ function BookingDetailsModal({
               <DollarSign size={16} /> Giá
             </h3>
             <p className="text-3xl font-bold text-indigo-600">
-              {booking.service.price.toLocaleString('vi-VN')}₫
+              {booking.services.reduce((sum: number, bs: any) => sum + bs.service.price, 0).toLocaleString('vi-VN')}₫
             </p>
           </div>
 

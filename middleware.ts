@@ -7,8 +7,8 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('token')?.value
   const payload = token ? verifyToken(token) : null
 
-  // Protect dashboard routes
-  if (!payload && request.nextUrl.pathname.startsWith('/dashboard')) {
+  // Protect dashboard and profile routes
+  if (!payload && (request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname === '/profile')) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     return NextResponse.redirect(url)

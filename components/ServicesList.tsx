@@ -2,12 +2,25 @@
 
 import { ServiceCard } from '@/components/ServiceCard'
 import { motion } from 'framer-motion'
+import { useState } from 'react'
 
 interface ServicesListProps {
   services: any[]
 }
 
 export function ServicesList({ services }: ServicesListProps) {
+  const [selectedServiceIds, setSelectedServiceIds] = useState<Set<string>>(new Set())
+
+  const toggleServiceSelection = (serviceId: string) => {
+    const newSelected = new Set(selectedServiceIds)
+    if (newSelected.has(serviceId)) {
+      newSelected.delete(serviceId)
+    } else {
+      newSelected.add(serviceId)
+    }
+    setSelectedServiceIds(newSelected)
+  }
+
   if (services.length === 0) {
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
@@ -30,9 +43,9 @@ export function ServicesList({ services }: ServicesListProps) {
           description={service.description}
           price={service.price}
           duration={service.duration}
-          onSelect={() => {
-            // Handle service selection if needed
-          }}
+          image={service.image}
+          isSelected={selectedServiceIds.has(service.id)}
+          onSelect={() => toggleServiceSelection(service.id)}
         />
       ))}
     </motion.div>

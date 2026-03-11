@@ -33,43 +33,43 @@ interface SidebarProps {
 }
 
 const menuItems: SidebarItem[] = [
-  {
-    label: 'Tổng quan',
-    href: '/dashboard',
-    icon: <BarChart3 className="w-5 h-5" />,
-  },
-  {
-    label: 'Lịch hẹn',
-    href: '/dashboard/bookings',
-    icon: <Calendar className="w-5 h-5" />,
-    badge: 3,
-  },
-  {
-    label: 'Lịch sử đặt lịch',
-    href: '/dashboard/book-history',
-    icon: <History className="w-5 h-5" />,
-  },
-  {
-    label: 'Dịch vụ',
-    href: '/dashboard/services',
-    icon: <Wrench className="w-5 h-5" />,
-  },
-  {
-    label: 'Cấu hình giờ làm',
-    href: '/dashboard/availability',
-    icon: <Clock className="w-5 h-5" />,
-  },
-  {
-    label: 'Cài đặt',
-    href: '/dashboard/settings',
-    icon: <Settings className="w-5 h-5" />,
-  },
-  {
-    label: 'Người dùng',
-    href: '/dashboard/users',
-    icon: <Users className="w-5 h-5" />,
-  },
-]
+	{
+		label: 'Tổng quan',
+		href: '/dashboard',
+		icon: <BarChart3 className="w-5 h-5" />,
+	},
+	{
+		label: 'Dịch vụ',
+		href: '/dashboard/services',
+		icon: <Wrench className="w-5 h-5" />,
+	},
+	{
+		label: 'Cấu hình giờ làm',
+		href: '/dashboard/availability',
+		icon: <Clock className="w-5 h-5" />,
+	},
+	{
+		label: 'Lịch hẹn',
+		href: '/dashboard/bookings',
+		icon: <Calendar className="w-5 h-5" />,
+		badge: 3,
+	},
+	{
+		label: 'Quản lý người dùng',
+		href: '/dashboard/users',
+		icon: <Users className="w-5 h-5" />,
+	},
+	{
+		label: 'Lịch sử đặt lịch của bạn',
+		href: '/dashboard/book-history',
+		icon: <History className="w-5 h-5" />,
+	},
+	{
+		label: 'Cài đặt',
+		href: '/dashboard/settings',
+		icon: <Settings className="w-5 h-5" />,
+	},
+];
 
 export function Sidebar({
   isOpen,

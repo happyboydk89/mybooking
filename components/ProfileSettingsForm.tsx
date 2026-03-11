@@ -25,67 +25,92 @@ export default function ProfileSettingsForm({
     setLoading(true)
     setMessage('')
 
-    const res = await fetch('/api/user/profile', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name, phone }),
-      credentials: 'include',
-    })
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, phone }),
+        credentials: 'include',
+      })
 
-    const data = await res.json()
-    if (!data.success) {
-      setMessage(data.error || 'Cap nhat that bai')
+      const data = await res.json()
+      if (!data.success) {
+        setMessage(`❌ ${data.error || 'Failed to update profile'}`)
+        setLoading(false)
+        return
+      }
+
+      setMessage('✅ Profile updated successfully!')
       setLoading(false)
-      return
+      setTimeout(() => {
+        router.refresh()
+        setMessage('')
+      }, 1500)
+    } catch (error) {
+      setMessage('❌ An error occurred while updating your profile')
+      setLoading(false)
     }
-
-    setMessage('Cap nhat thong tin thanh cong')
-    setLoading(false)
-    router.refresh()
   }
 
   return (
     <div className="card bg-base-100 shadow-md">
       <div className="card-body">
-        <h2 className="card-title">Thong tin ca nhan</h2>
-        <p className="text-sm text-gray-600">Email: {email}</p>
+        <h2 className="card-title text-xl font-bold text-slate-900">Personal Information</h2>
+        <p className="text-sm text-slate-600 mb-4">Email: <span className="font-medium">{email}</span></p>
 
-        <form onSubmit={handleSubmit} className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Ten</span>
-            </label>
-            <input
-              type="text"
-              className="input input-bordered"
-              placeholder="Nhap ten cua ban"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              disabled={loading}
-            />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold text-slate-700">Full Name</span>
+              </label>
+              <input
+                type="text"
+                className="input input-bordered focus:input-primary"
+                placeholder="Enter your full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold text-slate-700">Phone Number</span>
+              </label>
+              <input
+                type="tel"
+                className="input input-bordered focus:input-primary"
+                placeholder="Enter your phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={loading}
+              />
+            </div>
           </div>
 
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">So dien thoai</span>
-            </label>
-            <input
-              type="tel"
-              className="input input-bordered"
-              placeholder="Nhap so dien thoai"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-3 pt-4">
+            <button 
+              type="submit" 
+              className="btn btn-primary btn-wide md:btn-md"
               disabled={loading}
-            />
-          </div>
-
-          <div className="md:col-span-2 flex items-center gap-3">
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Dang cap nhat...' : 'Cap nhat profile'}
+            >
+              {loading ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  Updating...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </button>
-            {message && <span className="text-sm">{message}</span>}
+            {message && (
+              <span className={`text-sm font-medium ${message.includes('✅') ? 'text-green-600' : 'text-red-600'}`}>
+                {message}
+              </span>
+            )}
           </div>
         </form>
       </div>

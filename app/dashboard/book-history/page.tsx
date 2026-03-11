@@ -70,12 +70,16 @@ export default async function BookHistoryPage() {
           name: true,
         },
       },
-      service: {
-        select: {
-          id: true,
-          name: true,
-          price: true,
-          duration: true,
+      services: {
+        include: {
+          service: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              duration: true,
+            },
+          },
         },
       },
       review: {
@@ -102,7 +106,7 @@ export default async function BookHistoryPage() {
 
   const totalSpent = bookings
     .filter((booking: any) => booking.status === 'CONFIRMED')
-    .reduce((sum: number, booking: any) => sum + booking.service.price, 0)
+    .reduce((sum: number, booking: any) => sum + booking.services.reduce((serviceSum: number, bs: any) => serviceSum + bs.service.price, 0), 0)
 
   const totalBookings = bookings.length
 
@@ -135,7 +139,7 @@ export default async function BookHistoryPage() {
                 <div key={booking.id} className="rounded-xl border border-slate-200 bg-slate-50/80 p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <p className="text-lg font-semibold text-slate-900">{booking.service.name}</p>
+                      <p className="text-lg font-semibold text-slate-900">{booking.services.map((bs: any) => bs.service.name).join(' + ')}</p>
                       <p className="text-sm text-slate-500">{booking.business.name}</p>
                       <p className="mt-1 text-sm text-slate-600">
                         {new Date(booking.date).toLocaleDateString('vi-VN')} • {booking.timeSlot || 'Chua chon gio'}
@@ -209,12 +213,12 @@ export default async function BookHistoryPage() {
 
               {historyBookings.map((booking: any) => (
                 <tr key={booking.id} className="border-b border-slate-100">
-                  <td className="px-2 py-3 text-sm font-medium text-slate-900">{booking.service.name}</td>
+                  <td className="px-2 py-3 text-sm font-medium text-slate-900">{booking.services.map((bs: any) => bs.service.name).join(' + ')}</td>
                   <td className="px-2 py-3 text-sm text-slate-600">{booking.business.name}</td>
                   <td className="px-2 py-3 text-sm text-slate-600">
                     {new Date(booking.date).toLocaleDateString('vi-VN')} • {booking.timeSlot || '--:--'}
                   </td>
-                  <td className="px-2 py-3 text-sm text-slate-600">{formatVnd(booking.service.price)}</td>
+                  <td className="px-2 py-3 text-sm text-slate-600">{formatVnd(booking.services.reduce((sum: any, bs: any) => sum + bs.service.price, 0))}</td>
                   <td className="px-2 py-3">
                     <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${statusBadgeClasses(booking.status)}`}>
                       {statusLabel(booking.status)}
@@ -225,7 +229,7 @@ export default async function BookHistoryPage() {
                       {booking.status === 'CONFIRMED' && new Date(booking.date) < now && (
                         <BookingReviewButton
                           bookingId={booking.id}
-                          serviceName={booking.service.name}
+                          serviceName={booking.services.map((bs: any) => bs.service.name).join(' + ')}
                           businessName={booking.business.name}
                           initialReview={booking.review}
                         />

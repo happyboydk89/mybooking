@@ -4,7 +4,7 @@ import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
 import { sendBatchEmails } from './email'
 
-function attachBusinessRating<T extends { reviews?: Array<{ rating: number }> }>(business: T) {
+function attachBusinessRating<T extends { reviews?: Array<{ rating: number }> }>(business: T): T & { rating: number; reviewCount: number } {
   const reviews = business.reviews || []
   const reviewCount = reviews.length
   const rating = reviewCount === 0
@@ -15,7 +15,7 @@ function attachBusinessRating<T extends { reviews?: Array<{ rating: number }> }>
     ...business,
     rating,
     reviewCount,
-  }
+  } as T & { rating: number; reviewCount: number }
 }
 
 // Utility function to clean business data for client components (removes Date objects)
@@ -270,10 +270,14 @@ export async function getCustomersForProvider(providerId: string) {
                 name: true,
               },
             },
-            service: {
-              select: {
-                id: true,
-                name: true,
+            services: {
+              include: {
+                service: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
@@ -343,10 +347,14 @@ export async function getBusinessDetails(businessId: string) {
               select: {
                 id: true,
                 date: true,
-                service: {
-                  select: {
-                    id: true,
-                    name: true,
+                services: {
+                  include: {
+                    service: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
                   },
                 },
               },
@@ -400,14 +408,14 @@ export async function getAllBusinesses() {
 export async function createBooking(
   userId: string,
   businessId: string,
-  serviceId: string,
+  serviceIds: string[],
   date: Date,
   timeSlot: string
 ) {
   try {
-    // Check if service exists and get owner info
-    const service = await prisma.service.findUnique({
-      where: { id: serviceId },
+    // Check if all services exist and get owner info
+    const services = await prisma.service.findMany({
+      where: { id: { in: serviceIds } },
       include: {
         business: {
           include: {
@@ -417,12 +425,18 @@ export async function createBooking(
       },
     })
 
-    if (!service) {
-      return { success: false, error: 'Service not found' }
+    if (services.length === 0) {
+      return { success: false, error: 'Services not found' }
+    }
+
+    // Check if all services belong to the same business
+    const allSameBusinessId = services.every(s => s.businessId === businessId)
+    if (!allSameBusinessId) {
+      return { success: false, error: 'All services must belong to the same business' }
     }
 
     // Prevent users from booking their own services
-    if (service.business.providerId === userId) {
+    if (services[0].business.providerId === userId) {
       return { success: false, error: 'You cannot book your own service' }
     }
 
@@ -430,14 +444,22 @@ export async function createBooking(
       data: {
         userId,
         businessId,
-        serviceId,
         date,
         timeSlot,
         status: 'PENDING',
+        services: {
+          create: serviceIds.map(serviceId => ({
+            serviceId,
+          })),
+        },
       },
       include: {
         user: true,
-        service: true,
+        services: {
+          include: {
+            service: true,
+          },
+        },
       },
     })
     return { success: true, booking }
@@ -458,7 +480,11 @@ export async function updateBookingStatus(
       data: { status },
       include: {
         user: true,
-        service: true,
+        services: {
+          include: {
+            service: true,
+          },
+        },
         business: true,
       },
     })
@@ -480,9 +506,13 @@ export async function sendBookingReminder(bookingId: string) {
             email: true,
           },
         },
-        service: {
-          select: {
-            name: true,
+        services: {
+          include: {
+            service: {
+              select: {
+                name: true,
+              },
+            },
           },
         },
         business: {
@@ -500,6 +530,7 @@ export async function sendBookingReminder(bookingId: string) {
     const bookingDate = booking.date.toLocaleDateString('vi-VN')
     const bookingTime = booking.timeSlot || booking.date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
     const customerName = booking.user.name || booking.user.email
+    const serviceNames = booking.services.map(bs => bs.service.name).join(', ')
 
     const html = `
       <html>
@@ -511,7 +542,7 @@ export async function sendBookingReminder(bookingId: string) {
               Bạn có lịch hẹn sắp tới tại <strong>${booking.business.name}</strong>.
             </p>
             <ul style="padding-left: 18px; color: #334155; margin: 0 0 16px 0;">
-              <li>Dịch vụ: ${booking.service.name}</li>
+              <li>Dịch vụ: ${serviceNames}</li>
               <li>Ngày: ${bookingDate}</li>
               <li>Giờ: ${bookingTime}</li>
               <li>Mã lịch hẹn: ${booking.id}</li>
@@ -526,7 +557,7 @@ export async function sendBookingReminder(bookingId: string) {
       emails: [
         {
           to: booking.user.email,
-          subject: `Nhắc lịch hẹn - ${booking.service.name}`,
+          subject: `Nhắc lịch hẹn - ${serviceNames}`,
           html,
         },
       ],
@@ -547,15 +578,15 @@ export async function sendBookingReminder(bookingId: string) {
 export async function createBookingWithPayment(
   userId: string,
   businessId: string,
-  serviceId: string,
+  serviceIds: string[],
   date: Date,
   timeSlot: string,
   paymentProvider: 'ZALOPAY' | 'VNPAY' | 'MOMO' = 'ZALOPAY'
 ) {
   try {
-    // Check if service exists and get owner info
-    const service = await prisma.service.findUnique({
-      where: { id: serviceId },
+    // Check if services exist and get owner info
+    const services = await prisma.service.findMany({
+      where: { id: { in: serviceIds } },
       include: {
         business: {
           include: {
@@ -565,12 +596,18 @@ export async function createBookingWithPayment(
       },
     })
 
-    if (!service) {
-      return { success: false, error: 'Service not found' }
+    if (services.length === 0) {
+      return { success: false, error: 'Services not found' }
+    }
+
+    // Check if all services belong to the same business
+    const allSameBusinessId = services.every(s => s.businessId === businessId)
+    if (!allSameBusinessId) {
+      return { success: false, error: 'All services must belong to the same business' }
     }
 
     // Prevent users from booking their own services
-    if (service.business.providerId === userId) {
+    if (services[0].business.providerId === userId) {
       return { success: false, error: 'You cannot book your own service' }
     }
 
@@ -583,6 +620,10 @@ export async function createBookingWithPayment(
       return { success: false, error: 'User not found' }
     }
 
+    // Calculate total price and check if any service requires payment
+    const totalPrice = services.reduce((sum, service) => sum + service.price, 0)
+    const requiresPayment = services.some(service => service.requiresPayment)
+
     // Create booking within transaction
     const result = await prisma.$transaction(async (tx: any) => {
       // Create booking
@@ -590,20 +631,28 @@ export async function createBookingWithPayment(
         data: {
           userId,
           businessId,
-          serviceId,
           date,
           timeSlot,
           status: 'PENDING',
           paymentStatus: 'PENDING',
+          services: {
+            create: serviceIds.map(serviceId => ({
+              serviceId,
+            })),
+          },
         },
         include: {
           user: true,
-          service: true,
+          services: {
+            include: {
+              service: true,
+            },
+          },
         },
       })
 
-      // If service requires payment, create payment record
-      if (service.requiresPayment) {
+      // If any service requires payment, create payment record
+      if (requiresPayment) {
         // Generate unique transaction ID
         const timestamp = Date.now()
         const randomSuffix = Math.random().toString().substring(2, 8)
@@ -615,7 +664,7 @@ export async function createBookingWithPayment(
             bookingId: booking.id,
             provider: paymentProvider,
             transactionId,
-            amount: service.price,
+            amount: totalPrice,
             status: 'PENDING',
           },
         })
@@ -656,7 +705,11 @@ export async function getBookingDetails(bookingId: string) {
       where: { id: bookingId },
       include: {
         user: true,
-        service: true,
+        services: {
+          include: {
+            service: true,
+          },
+        },
         business: true,
         payment: true,
       },
@@ -724,12 +777,16 @@ export async function getBookingsForBusiness(
             email: true,
           },
         },
-        service: {
-          select: {
-            id: true,
-            name: true,
-            price: true,
-            duration: true,
+        services: {
+          include: {
+            service: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+                duration: true,
+              },
+            },
           },
         },
       },
@@ -749,7 +806,11 @@ export async function getBookingById(bookingId: string) {
       where: { id: bookingId },
       include: {
         user: true,
-        service: true,
+        services: {
+          include: {
+            service: true,
+          },
+        },
         business: true,
       },
     })

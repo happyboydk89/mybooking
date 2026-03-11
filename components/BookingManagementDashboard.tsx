@@ -16,12 +16,14 @@ interface Booking {
     name?: string
     email: string
   }
-  service: {
-    id: string
-    name: string
-    price: number
-    duration: number
-  }
+  services: Array<{
+    service: {
+      id: string
+      name: string
+      price: number
+      duration: number
+    }
+  }>
 }
 
 type FilterType = 'all' | 'day' | 'week' | 'month'
@@ -222,14 +224,20 @@ function BookingCard({
       <div className="card-body">
         <div className="flex justify-between items-start mb-3">
           <div >
-            <h3 className="card-title text-lg">{booking.service.name}</h3>
+            <h3 className="card-title text-lg">
+              {booking.services.map(bs => bs.service.name).join(' + ')}
+            </h3>
             <p className="text-sm text-gray-600">
               👤 {booking.user.name || booking.user.email}
             </p>
           </div>
           <div className="text-right">
-            <p className="font-bold text-lg text-blue-600">${booking.service.price}</p>
-            <p className="text-xs text-gray-500">{booking.service.duration} phút</p>
+            <p className="font-bold text-lg text-blue-600">
+              ${booking.services.reduce((sum, bs) => sum + bs.service.price, 0)}
+            </p>
+            <p className="text-xs text-gray-500">
+              {Math.max(...booking.services.map(bs => bs.service.duration))} phút
+            </p>
           </div>
         </div>
 

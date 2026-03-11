@@ -23,7 +23,7 @@ export function AppChrome({ children }: AppChromeProps) {
       {/* Page Content */}
       <main className="min-h-screen">{children}</main>
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-8 mt-12">
+      <footer className="bg-slate-900 text-white py-8">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>

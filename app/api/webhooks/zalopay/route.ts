@@ -103,7 +103,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         booking: {
           include: {
             user: true,
-            service: true,
+            services: {
+              include: {
+                service: true,
+              },
+            },
             business: {
               include: {
                 provider: true,
@@ -156,7 +160,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             booking: payment.booking,
             payment: payment,
             business: payment.booking.business,
-            service: payment.booking.service,
+            services: payment.booking.services,
           }
         } else {
           // If payment failed, update booking payment status

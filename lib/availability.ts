@@ -74,13 +74,23 @@ export async function getAvailableSlots(
         lte: dayEnd,
       },
     },
-    include: { service: true },
+    include: { 
+      services: {
+        include: {
+          service: true,
+        },
+      },
+    },
   })
 
   // convert bookings into simple intervals (in the business's timezone)
   const bookingIntervals = bookings.map((b: any) => {
     const zonedStart = toZonedTime(b.date, tz)
-    const zonedEnd = addMinutes(zonedStart, b.service.duration)
+    // Calculate max duration from all services in the booking
+    const maxDuration = b.services.length > 0 
+      ? Math.max(...b.services.map((bs: any) => bs.service.duration))
+      : 60
+    const zonedEnd = addMinutes(zonedStart, maxDuration)
     return { start: zonedStart, end: zonedEnd }
   })
 
