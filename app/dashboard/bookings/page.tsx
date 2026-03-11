@@ -17,7 +17,7 @@ export default async function BookingsPage({
 
   // Get all businesses for this user
   const businessResult = await getUserBusinesses(user.id)
-  const businesses = businessResult.success ? businessResult.businesses : []
+  const businesses = businessResult.success ? (businessResult.businesses ?? []) : []
 
   const params = await searchParams
   const selectedBusinessId = params.business

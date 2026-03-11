@@ -8,8 +8,8 @@ import BookingFilter from '@/components/BookingFilter'
 
 interface Booking {
   id: string
-  date: string
-  timeSlot: string
+  date: Date
+  timeSlot: string | null
   status: 'PENDING' | 'CONFIRMED' | 'CANCELLED'
   user: {
     id: string
@@ -38,7 +38,7 @@ export default function BookingManagementDashboard({ businessId }: { businessId:
     const loadBookings = async () => {
       setLoading(true)
       const result = await getBookingsForBusiness(businessId, filterType, selectedDate)
-      if (result.success) {
+      if (result.success && result.bookings) {
         setBookings(result.bookings as Booking[])
       }
       setLoading(false)

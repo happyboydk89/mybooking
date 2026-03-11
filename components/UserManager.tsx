@@ -30,7 +30,7 @@ export default function UserManager({ initialUsers }: { initialUsers: any[] }) {
       setMessage('✅ User tạo thành công!')
       setTimeout(() => setMessage(''), 3000)
       const allUsers = await getAllUsers()
-      if (allUsers.success) setUsers(allUsers.users)
+      if (allUsers.success) setUsers(allUsers.users ?? [])
       resetForm()
     } else {
       setMessage('❌ ' + result.error)
@@ -52,7 +52,7 @@ export default function UserManager({ initialUsers }: { initialUsers: any[] }) {
       setMessage('✅ User cập nhật thành công!')
       setTimeout(() => setMessage(''), 3000)
       const allUsers = await getAllUsers()
-      if (allUsers.success) setUsers(allUsers.users)
+      if (allUsers.success) setUsers(allUsers.users ?? [])
       resetForm()
     } else {
       setMessage('❌ ' + result.error)
@@ -79,7 +79,7 @@ export default function UserManager({ initialUsers }: { initialUsers: any[] }) {
       setMessage('✅ User xóa thành công!')
       setTimeout(() => setMessage(''), 3000)
       const allUsers = await getAllUsers()
-      if (allUsers.success) setUsers(allUsers.users)
+      if (allUsers.success) setUsers(allUsers.users ?? [])
     } else {
       setMessage('❌ ' + result.error)
     }

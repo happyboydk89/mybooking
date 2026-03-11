@@ -52,14 +52,18 @@ export default function SearchBar({
 
         {/* Quick Category Filters */}
         <div className="flex flex-wrap gap-2">
-          {['Hair Salon', 'Clinic', 'Spa'].map((category) => (
+          {[
+            { label: 'Hair Salon', value: 'HAIR_SALON' },
+            { label: 'Clinic', value: 'CLINIC' },
+            { label: 'Spa', value: 'SPA_MASSAGE' },
+          ].map((category) => (
             <button
-              key={category}
+              key={category.value}
               type="button"
-              onClick={() => handleCategoryClick(category)}
+              onClick={() => handleCategoryClick(category.value)}
               className="px-4 py-2 bg-indigo-100 text-indigo-700 font-medium rounded-lg hover:bg-indigo-200 transition-colors text-sm"
             >
-              {category}
+              {category.label}
             </button>
           ))}
         </div>

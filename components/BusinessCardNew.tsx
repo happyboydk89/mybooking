@@ -22,8 +22,8 @@ interface BusinessCardProps {
 }
 
 export default function BusinessCard({ business, index = 0, userLoggedIn }: BusinessCardProps) {
-  const rating = business.rating || 4.5
-  const reviewCount = business.reviewCount || 128
+  const rating = business.rating ?? 0
+  const reviewCount = business.reviewCount ?? 0
   const imageUrl = business.logo || `https://images.unsplash.com/photo-${Math.random() > 0.5 ? '1560066183-f2a2dc50d266' : '1516321496550-f36967e38d12'}?w=500&h=300&fit=crop`
 
   return (
@@ -78,8 +78,10 @@ export default function BusinessCard({ business, index = 0, userLoggedIn }: Busi
                   />
                 ))}
               </div>
-              <span className="text-sm font-semibold text-slate-900">{rating}</span>
-              <span className="text-xs text-slate-500">({reviewCount} reviews)</span>
+              <span className="text-sm font-semibold text-slate-900">{reviewCount > 0 ? rating.toFixed(1) : 'Mới'}</span>
+              <span className="text-xs text-slate-500">
+                {reviewCount > 0 ? `(${reviewCount} đánh giá)` : '(Chưa có đánh giá)'}
+              </span>
             </div>
 
             {/* Address */}

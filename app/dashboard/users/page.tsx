@@ -9,7 +9,7 @@ export default async function UsersPage() {
   }
 
   const result = await getCustomersForProvider(user.id)
-  const customers = result.success ? result.customers : []
+  const customers = result.success ? (result.customers ?? []) : []
 
   return (
     <div className="container mx-auto p-4">

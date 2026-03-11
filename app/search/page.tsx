@@ -11,17 +11,35 @@ interface SearchPageProps {
   }>
 }
 
+const CATEGORY_MAP: Record<string, 'HAIR_SALON' | 'CLINIC' | 'SPA_MASSAGE'> = {
+  HAIR_SALON: 'HAIR_SALON',
+  HAIRSALON: 'HAIR_SALON',
+  'HAIR SALON': 'HAIR_SALON',
+  CLINIC: 'CLINIC',
+  SPA_MASSAGE: 'SPA_MASSAGE',
+  SPAMASSAGE: 'SPA_MASSAGE',
+  'SPA MASSAGE': 'SPA_MASSAGE',
+  SPA: 'SPA_MASSAGE',
+}
+
+function normalizeCategory(category?: string) {
+  if (!category) return undefined
+  const key = category.trim().toUpperCase().replace(/[-_]+/g, ' ').replace(/\s+/g, ' ')
+  return CATEGORY_MAP[key] || CATEGORY_MAP[key.replace(/\s/g, '')]
+}
+
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q: query, category } = await searchParams
+  const normalizedCategory = normalizeCategory(category)
   const user = await getUserFromRequest()
 
   const businessResult = await getAllBusinesses()
-  const allBusinesses = businessResult.success ? businessResult.businesses : []
+  const allBusinesses = businessResult.success ? (businessResult.businesses ?? []) : []
 
   // Filter businesses based on search query and category
   let filteredBusinesses = allBusinesses.filter((business: any) => {
     // Filter by category
-    if (category && business.industryType !== category) {
+    if (normalizedCategory && business.industryType !== normalizedCategory) {
       return false
     }
 
@@ -64,17 +82,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             {query
               ? `Kết quả tìm kiếm: "${query}"`
-              : category
-                ? `Tất cả ${getCategoryName(category)}`
+              : normalizedCategory
+                ? `Tất cả ${getCategoryName(normalizedCategory)}`
                 : 'Tất cả Dịch Vụ'}
           </h1>
 
           <div className="flex flex-wrap gap-3">
-            {category && (
+            {normalizedCategory && (
               <span className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg">
-                Loại hình: {getCategoryName(category)}
+                Loại hình: {getCategoryName(normalizedCategory)}
                 <Link
-                  href="/"
+                  href="/search"
                   className="ml-2 hover:text-indigo-900 font-semibold"
                   title="Clear filter"
                 >

@@ -4,6 +4,39 @@ import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
 import { sendBatchEmails } from './email'
 
+function attachBusinessRating<T extends { reviews?: Array<{ rating: number }> }>(business: T) {
+  const reviews = business.reviews || []
+  const reviewCount = reviews.length
+  const rating = reviewCount === 0
+    ? 0
+    : Number((reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount).toFixed(1))
+
+  return {
+    ...business,
+    rating,
+    reviewCount,
+  }
+}
+
+// Utility function to clean business data for client components (removes Date objects)
+function cleanBusinessForClient(business: any) {
+  return {
+    ...business,
+    createdAt: business.createdAt?.toISOString?.() || business.createdAt,
+    updatedAt: business.updatedAt?.toISOString?.() || business.updatedAt,
+    services: business.services?.map((service: any) => ({
+      ...service,
+      createdAt: service.createdAt?.toISOString?.() || service.createdAt,
+      updatedAt: service.updatedAt?.toISOString?.() || service.updatedAt,
+    })) || [],
+    reviews: business.reviews?.map((review: any) => ({
+      ...review,
+      createdAt: review.createdAt?.toISOString?.() || review.createdAt,
+      updatedAt: review.updatedAt?.toISOString?.() || review.updatedAt,
+    })) || [],
+  }
+}
+
 export async function createUserInDB(email: string, name?: string, password?: string) {
   try {
     const existingUser = await prisma.user.findUnique({
@@ -189,9 +222,14 @@ export async function getUserBusinesses(userId: string) {
       include: {
         services: true,
         availabilities: true,
+        reviews: {
+          select: {
+            rating: true,
+          },
+        },
       },
     })
-    return { success: true, businesses }
+    return { success: true, businesses: businesses.map(attachBusinessRating) }
   } catch (error) {
     console.error('Error fetching user businesses:', error)
     return { success: false, error: (error as Error).message }
@@ -291,9 +329,36 @@ export async function getBusinessDetails(businessId: string) {
       include: {
         services: true,
         availabilities: true,
+        reviews: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatarUrl: true,
+              },
+            },
+            booking: {
+              select: {
+                id: true,
+                date: true,
+                service: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
       },
     })
-    return { success: true, business }
+    return { success: true, business: business ? attachBusinessRating(business) : null }
   } catch (error) {
     console.error('Error fetching business details:', error)
     return { success: false, error: (error as Error).message }
@@ -306,6 +371,11 @@ export async function getAllBusinesses() {
     const businesses = await prisma.business.findMany({
       include: {
         services: true,
+        reviews: {
+          select: {
+            rating: true,
+          },
+        },
         provider: {
           select: {
             id: true,
@@ -316,7 +386,10 @@ export async function getAllBusinesses() {
       },
       orderBy: { createdAt: 'desc' },
     })
-    return { success: true, businesses }
+    const cleanedBusinesses = businesses
+      .map(attachBusinessRating)
+      .map(cleanBusinessForClient)
+    return { success: true, businesses: cleanedBusinesses }
   } catch (error) {
     console.error('Error fetching businesses:', error)
     return { success: false, error: (error as Error).message }

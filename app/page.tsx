@@ -7,13 +7,13 @@ import BusinessCardNew from '@/components/BusinessCardNew'
 
 export default async function Home() {
   const result = await getAllUsers()
-  const users = result.success ? result.users : []
+  const users = result.success ? (result.users ?? []) : []
   const totalBookings = users.reduce((sum: number, user: any) => sum + (user.bookings?.length || 0), 0)
 
   const user = await getUserFromRequest()
 
   const businessResult = await getAllBusinesses()
-  const businesses = businessResult.success ? businessResult.businesses : []
+  const businesses = businessResult.success ? (businessResult.businesses ?? []) : []
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">

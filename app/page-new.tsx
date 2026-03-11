@@ -5,7 +5,7 @@ import BusinessCard from '@/components/BusinessCard'
 
 export default async function Home() {
   const result = await getAllUsers()
-  const users = result.success ? result.users : []
+  const users = result.success ? (result.users ?? []) : []
   const totalBookings = users.reduce((sum: number, user: any) => sum + (user.bookings?.length || 0), 0)
 
   // Get current user if logged in
@@ -13,7 +13,7 @@ export default async function Home() {
 
   // Get all businesses
   const businessResult = await getAllBusinesses()
-  const businesses = businessResult.success ? businessResult.businesses : []
+  const businesses = businessResult.success ? (businessResult.businesses ?? []) : []
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50">

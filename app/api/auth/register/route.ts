@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     }
     const result = await registerUser(email, password)
     console.log('Register result:', result)
-    if (!result.success) {
+    if (!result.success || !result.user) {
       return NextResponse.json({ success: false, error: result.error }, { status: 400 })
     }
     const token = createToken(result.user.id)

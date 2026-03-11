@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getUserFromRequest } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import BookingReviewButton from '@/components/BookingReviewButton'
 
 type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED'
 
@@ -75,6 +76,12 @@ export default async function BookHistoryPage() {
           name: true,
           price: true,
           duration: true,
+        },
+      },
+      review: {
+        select: {
+          rating: true,
+          comment: true,
         },
       },
     },
@@ -188,7 +195,7 @@ export default async function BookHistoryPage() {
                 <th className="px-2 py-3 text-left text-xs uppercase tracking-wide text-slate-500">Ngay gio</th>
                 <th className="px-2 py-3 text-left text-xs uppercase tracking-wide text-slate-500">Gia</th>
                 <th className="px-2 py-3 text-left text-xs uppercase tracking-wide text-slate-500">Trang thai</th>
-                <th className="px-2 py-3 text-right text-xs uppercase tracking-wide text-slate-500">Re-book</th>
+                <th className="px-2 py-3 text-right text-xs uppercase tracking-wide text-slate-500">Hành động</th>
               </tr>
             </thead>
             <tbody>
@@ -214,12 +221,22 @@ export default async function BookHistoryPage() {
                     </span>
                   </td>
                   <td className="px-2 py-3 text-right">
-                    <Link
-                      href={`/business/${booking.business.id}`}
-                      className="inline-flex rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
-                    >
-                      Dat lai
-                    </Link>
+                    <div className="flex justify-end gap-2">
+                      {booking.status === 'CONFIRMED' && new Date(booking.date) < now && (
+                        <BookingReviewButton
+                          bookingId={booking.id}
+                          serviceName={booking.service.name}
+                          businessName={booking.business.name}
+                          initialReview={booking.review}
+                        />
+                      )}
+                      <Link
+                        href={`/business/${booking.business.id}`}
+                        className="inline-flex rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+                      >
+                        Dat lai
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
