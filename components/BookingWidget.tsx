@@ -30,6 +30,8 @@ interface BookingWidgetProps {
   services: Service[]
   availabilities: Availability[]
   businessName: string
+  selectedServices?: Service[]
+  onToggleService?: (serviceId: string) => void
 }
 
 export default function BookingWidget({
@@ -38,8 +40,14 @@ export default function BookingWidget({
   services,
   availabilities,
   businessName,
+  selectedServices: externalSelectedServices,
+  onToggleService: externalToggleService,
 }: BookingWidgetProps) {
-  const [selectedServices, setSelectedServices] = useState<Service[]>([])
+  const [localSelectedServices, setLocalSelectedServices] = useState<Service[]>([])
+  
+  // Use external state if provided, otherwise use local state
+  const isControlled = externalSelectedServices !== undefined && externalToggleService !== undefined
+  const selectedServices = isControlled ? externalSelectedServices : localSelectedServices
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -91,14 +99,18 @@ export default function BookingWidget({
   }
 
   const toggleService = (service: Service) => {
-    setSelectedServices((prev) => {
-      const isSelected = prev.some(s => s.id === service.id)
-      if (isSelected) {
-        return prev.filter(s => s.id !== service.id)
-      } else {
-        return [...prev, service]
-      }
-    })
+    if (isControlled) {
+      externalToggleService(service.id)
+    } else {
+      setLocalSelectedServices((prev) => {
+        const isSelected = prev.some(s => s.id === service.id)
+        if (isSelected) {
+          return prev.filter(s => s.id !== service.id)
+        } else {
+          return [...prev, service]
+        }
+      })
+    }
     setSelectedDate(null)
     setSelectedTime(null)
   }
